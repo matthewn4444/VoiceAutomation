@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">VoiceAutomation</string>
+
+    <!-- Speech input prompt messages -->
+    <string name="prompt_setup">Preparing speech recognition</string>
+    <string name="prompt_ready">Ready for commands</string>
+    <string name="prompt_adjust_lights">Adjust lights with a percentage or turn on/off</string>
+
+</resources>
