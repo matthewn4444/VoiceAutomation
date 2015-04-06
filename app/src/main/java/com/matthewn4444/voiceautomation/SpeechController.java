@@ -36,6 +36,7 @@ public class SpeechController implements RecognitionListener {
     private SpeechCategory mCurrentCategory;
     private File mCommandFile;
     private boolean mIsReady;
+    private int mTimeout;
 
     public class PartialReturnResult {
         public boolean isFinished = false;
@@ -54,11 +55,16 @@ public class SpeechController implements RecognitionListener {
         public void onSpeechResult(String text);
     }
 
-    public SpeechController(Context ctx, SpeechCategory[] categories) {
+    public SpeechController(Context c, SpeechCategory[] categories) {
+        this(c, categories, c.getResources().getInteger(R.integer.settings_default_speech_timeout));
+    }
+
+    public SpeechController(Context ctx, SpeechCategory[] categories, int speechTimeout) {
         mCtx = ctx;
         mCategories = categories;
         mLookup = new HashMap<>();
         mIsReady = false;
+        mTimeout = speechTimeout;
 
         for (SpeechCategory cate: categories) {
             mLookup.put(cate.getActivationCommand(), cate);
@@ -179,7 +185,7 @@ public class SpeechController implements RecognitionListener {
     private void switchSearch(String searchName) {
         mRecognizer.stop();
 
-        // If we are not spotting, start listening with timeout (10000 ms or 10 seconds).
+        // If we are not spotting, start listening with timeout
         Log.v(TAG, "Switch search to " + searchName);
         if (searchName.equals(KWS_SEARCH)) {
             mRecognizer.startListening(searchName);
@@ -189,7 +195,7 @@ public class SpeechController implements RecognitionListener {
         } else {
             SpeechCategory cate = mLookup.get(searchName);
             if (cate != null) {
-                mRecognizer.startListening(searchName, 10000);
+                mRecognizer.startListening(searchName, mTimeout);
                 if (mListener != null) {
                     mListener.onBeginSpeechCategory(cate);
                 }

@@ -11,4 +11,7 @@
 
     <!-- Speech assets file names -->
     <string name="assets_lights_grammer_filename">lights.gram</string>
+
+    <!-- Default Settings -->
+    <integer name="settings_default_speech_timeout">3000</integer>
 </resources>
