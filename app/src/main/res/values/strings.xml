@@ -6,4 +6,9 @@
     <string name="prompt_ready">Ready for commands</string>
     <string name="prompt_adjust_lights">Adjust lights with a percentage or turn on/off</string>
 
+    <!-- Commands -->
+    <string name="command_lights">lights</string>
+
+    <!-- Speech assets file names -->
+    <string name="assets_lights_grammer_filename">lights.gram</string>
 </resources>

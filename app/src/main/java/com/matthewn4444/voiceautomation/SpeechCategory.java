@@ -42,11 +42,15 @@ public class SpeechCategory {
         return result;
     }
 
-    public void displayResult(String result) {
+    public void onResult(String result) {
         if (mListener != null) {
             mListener.onSpeechResult(this, result);
         }
     }
+
+    public void pause() {}
+
+    public void resume() {}
 
     public SpeechModel getModelType() {
         return mModel;

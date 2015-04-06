@@ -145,12 +145,14 @@ public class SpeechController implements RecognitionListener {
             String text = hypothesis.getHypstr();
             speechFinishedWithResult(text);
             mCurrentCategory = null;
+        } else {
+            speechFinishedWithResult(null);
         }
     }
 
     private void speechFinishedWithResult(String text) {
         if (mCurrentCategory != null) {
-            mCurrentCategory.displayResult(text);
+            mCurrentCategory.onResult(text);
         }
         if (mListener != null) {
             mListener.onSpeechResult(text);

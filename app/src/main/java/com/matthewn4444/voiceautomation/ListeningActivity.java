@@ -5,10 +5,14 @@ import android.support.v7.app.ActionBarActivity;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.matthewn4444.voiceautomation.lights.LFXController;
+import com.matthewn4444.voiceautomation.lights.LightsSpeechCategory;
+
 
 public class ListeningActivity extends ActionBarActivity {
     private SpeechCategory[] mCategories;
     private SpeechController mController;
+    private LightsSpeechCategory.ILightController mLightController;
 
     private TextView mCaptionField;
     private TextView mResultField;
@@ -21,6 +25,8 @@ public class ListeningActivity extends ActionBarActivity {
         mCaptionField = (TextView) findViewById(R.id.caption);
         mResultField = (TextView) findViewById(R.id.result);
 
+        mLightController = new LFXController(this);
+
         setupSpeechController();
     }
 
@@ -28,12 +34,18 @@ public class ListeningActivity extends ActionBarActivity {
     protected void onPause() {
         super.onPause();
         mController.pause();
+        for (SpeechCategory cate: mCategories) {
+            cate.pause();
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         mController.resume();
+        for (SpeechCategory cate: mCategories) {
+            cate.resume();
+        }
     }
 
     @Override
@@ -48,7 +60,7 @@ public class ListeningActivity extends ActionBarActivity {
 
     private void setupSpeechController() {
         mCategories = new SpeechCategory[]{
-                new SpeechCategory("lights", "lights.gram", SpeechController.SpeechModel.DEFAULT, getString(R.string.prompt_adjust_lights))
+                new LightsSpeechCategory(this, mLightController)
         };
 
         mCaptionField.setText(R.string.prompt_setup);
@@ -80,7 +92,9 @@ public class ListeningActivity extends ActionBarActivity {
             @Override
             public void onSpeechResult(String text) {
                 mResultField.setText("");
-                toast(text);
+                if (text != null) {
+                    toast(text);
+                }
             }
         });
     }
