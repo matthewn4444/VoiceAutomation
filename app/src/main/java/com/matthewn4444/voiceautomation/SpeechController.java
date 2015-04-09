@@ -1,7 +1,10 @@
 package com.matthewn4444.voiceautomation;
 
 import android.content.Context;
+import android.media.AudioManager;
+import android.media.SoundPool;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.util.Log;
 
 import java.io.File;
@@ -34,9 +37,15 @@ public class SpeechController implements RecognitionListener {
     private SpeechRecognizer mRecognizer;
     private SpeechListener mListener;
     private SpeechCategory mCurrentCategory;
+    private Handler mDelay = new Handler();
     private File mCommandFile;
     private boolean mIsReady;
     private int mTimeout;
+
+    private SoundPool mSoundPool;
+    private int mSoundStartId;
+    private int mSoundResultId;
+    private int mSoundFailId;
 
     public class PartialReturnResult {
         public boolean isFinished = false;
@@ -158,10 +167,22 @@ public class SpeechController implements RecognitionListener {
 
     private void speechFinishedWithResult(String text) {
         if (mCurrentCategory != null) {
+            if (text != null) {
+                playSoundEffect(mSoundResultId);
+            }
             mCurrentCategory.onResult(text);
+        }
+        if (text == null) {
+            playSoundEffect(mSoundFailId);
         }
         if (mListener != null) {
             mListener.onSpeechResult(text);
+        }
+    }
+
+    private void playSoundEffect(int id) {
+        if (mSoundPool != null) {
+            mSoundPool.play(id, 1, 1, 0, 1, 1);
         }
     }
 
@@ -182,7 +203,7 @@ public class SpeechController implements RecognitionListener {
         mRecognizer.shutdown();
     }
 
-    private void switchSearch(String searchName) {
+    private void switchSearch(final String searchName) {
         mRecognizer.stop();
 
         // If we are not spotting, start listening with timeout
@@ -193,9 +214,15 @@ public class SpeechController implements RecognitionListener {
                 mListener.onBeginSpeechCategory(null);
             }
         } else {
+            playSoundEffect(mSoundStartId);
             SpeechCategory cate = mLookup.get(searchName);
             if (cate != null) {
-                mRecognizer.startListening(searchName, mTimeout);
+                mDelay.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        mRecognizer.startListening(searchName, mTimeout);
+                    }
+                }, 300);
                 if (mListener != null) {
                     mListener.onBeginSpeechCategory(cate);
                 }
@@ -205,7 +232,13 @@ public class SpeechController implements RecognitionListener {
 
     public void pause() {
         Log.v(TAG, "Pause speech recognition");
-        mRecognizer.stop();
+        if (mRecognizer != null) {
+            mRecognizer.stop();
+        }
+        if (mSoundPool != null) {
+            mSoundPool.release();
+            mSoundPool = null;
+        }
     }
 
     public void resume() {
@@ -213,6 +246,7 @@ public class SpeechController implements RecognitionListener {
             Log.v(TAG, "Resume speech recognition");
             switchSearch(KWS_SEARCH);
         }
+        setupSoundEffects();
     }
 
     public void setSpeechListener(SpeechListener listener) {
@@ -279,5 +313,14 @@ public class SpeechController implements RecognitionListener {
             }
         }
         return commandFile;
+    }
+
+    private void setupSoundEffects() {
+        if (mSoundPool == null) {
+            mSoundPool = new SoundPool(3, AudioManager.STREAM_MUSIC, 0);
+            mSoundStartId = mSoundPool.load(mCtx, R.raw.listen_start, 1);
+            mSoundResultId = mSoundPool.load(mCtx, R.raw.listen_result, 1);
+            mSoundFailId = mSoundPool.load(mCtx, R.raw.listen_fail, 1);
+        }
     }
 }
