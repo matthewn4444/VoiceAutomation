@@ -215,17 +215,17 @@ public class SpeechController implements RecognitionListener {
             }
         } else {
             playSoundEffect(mSoundStartId);
-            SpeechCategory cate = mLookup.get(searchName);
+            final SpeechCategory cate = mLookup.get(searchName);
             if (cate != null) {
                 mDelay.postDelayed(new Runnable() {
                     @Override
                     public void run() {
                         mRecognizer.startListening(searchName, mTimeout);
+                        if (mListener != null) {
+                            mListener.onBeginSpeechCategory(cate);
+                        }
                     }
-                }, 300);
-                if (mListener != null) {
-                    mListener.onBeginSpeechCategory(cate);
-                }
+                }, 250);
             }
         }
     }
