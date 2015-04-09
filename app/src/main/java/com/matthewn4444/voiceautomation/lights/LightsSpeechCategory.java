@@ -217,7 +217,7 @@ public class LightsSpeechCategory extends SpeechCategory {
                 }
             }
         }
-        return sum;
+        return Math.min(sum, 100);
     }
 
 }
