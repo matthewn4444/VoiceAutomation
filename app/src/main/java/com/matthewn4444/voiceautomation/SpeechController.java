@@ -5,6 +5,7 @@ import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.AsyncTask;
 import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import java.io.File;
@@ -12,6 +13,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.HashMap;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import edu.cmu.pocketsphinx.Assets;
 import edu.cmu.pocketsphinx.Hypothesis;
@@ -38,6 +41,8 @@ public class SpeechController implements RecognitionListener {
     private SpeechListener mListener;
     private SpeechCategory mCurrentCategory;
     private Handler mDelay = new Handler();
+    private Object mTimerLock = new Object();
+    private Timer mTimer;
     private File mCommandFile;
     private boolean mIsReady;
     private int mTimeout;
@@ -142,9 +147,7 @@ public class SpeechController implements RecognitionListener {
 
                 // The category filter told that search is finished
                 if (res.isFinished) {
-                    mRecognizer.cancel();
-                    speechFinishedWithResult(text);
-                    switchSearch(KWS_SEARCH);
+                    endSpeech(text);
                     return;
                 }
             }
@@ -166,6 +169,7 @@ public class SpeechController implements RecognitionListener {
     }
 
     private void speechFinishedWithResult(String text) {
+        endTimeout();
         if (mCurrentCategory != null) {
             if (text != null) {
                 playSoundEffect(mSoundResultId);
@@ -195,10 +199,12 @@ public class SpeechController implements RecognitionListener {
 
     @Override
     public void onTimeout() {
+        endTimeout();
         switchSearch(KWS_SEARCH);
     }
 
     public void shutdown() {
+        endTimeout();
         mRecognizer.cancel();
         mRecognizer.shutdown();
     }
@@ -224,6 +230,20 @@ public class SpeechController implements RecognitionListener {
                         if (mListener != null) {
                             mListener.onBeginSpeechCategory(cate);
                         }
+
+                        // Timeout the current category if listening for too long
+                        if (cate.getTimeout() > 0) {
+                            synchronized (mTimerLock) {
+                                endTimeout();
+                                mTimer = new Timer();
+                                mTimer.schedule(new TimerTask() {
+                                    @Override
+                                    public void run() {
+                                        endSpeech(null);
+                                    }
+                                }, cate.getTimeout());
+                            }
+                        }
                     }
                 }, 250);
             }
@@ -232,6 +252,7 @@ public class SpeechController implements RecognitionListener {
 
     public void pause() {
         Log.v(TAG, "Pause speech recognition");
+        endTimeout();
         if (mRecognizer != null) {
             mRecognizer.stop();
         }
@@ -313,6 +334,27 @@ public class SpeechController implements RecognitionListener {
             }
         }
         return commandFile;
+    }
+
+    private void endTimeout() {
+        synchronized (mTimerLock) {
+            if (mTimer != null) {
+                mTimer.cancel();
+                mTimer = null;
+            }
+        }
+    }
+
+    private void endSpeech(final String text) {
+        endTimeout();
+        mRecognizer.cancel();
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                speechFinishedWithResult(text);
+                switchSearch(KWS_SEARCH);
+            }
+        });
     }
 
     private void setupSoundEffects() {

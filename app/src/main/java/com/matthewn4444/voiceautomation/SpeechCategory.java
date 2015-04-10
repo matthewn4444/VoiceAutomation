@@ -5,12 +5,14 @@ import com.matthewn4444.voiceautomation.SpeechController.SpeechModel;
 
 public class SpeechCategory {
     public final static String DefaultThreshold = "1e-1";
+    public final static int DefaultTimeout = 10000;
 
     private final String mThreshold;
     private final String mActivationPhrase;
     private final SpeechModel mModel;
     private final String mMessage;
     private final String mAssetsGrammerFile;
+    private final int mTimeout;
 
     private OnSpeechResultListener mListener;
 
@@ -24,11 +26,16 @@ public class SpeechCategory {
     }
 
     public SpeechCategory(String activationPhrase, String assetsGrammerFile, SpeechModel model, String message, String threshold) {
+        this(activationPhrase, assetsGrammerFile, model, message, DefaultThreshold, DefaultTimeout);
+    }
+
+    public SpeechCategory(String activationPhrase, String assetsGrammerFile, SpeechModel model, String message, String threshold, int timeout) {
         mActivationPhrase = activationPhrase;
         mAssetsGrammerFile = assetsGrammerFile;
         mModel = model;
         mMessage = message;
         mThreshold = threshold;
+        mTimeout = timeout;
     }
 
     public String getGrammerFileName() {
@@ -68,6 +75,9 @@ public class SpeechCategory {
         return mActivationPhrase;
     }
 
+    public int getTimeout() {
+        return mTimeout;
+    }
 
     public void setOnSpeechResultListener(OnSpeechResultListener listener) {
         mListener = listener;
