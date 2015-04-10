@@ -57,7 +57,6 @@ public class LightsSpeechCategory extends SpeechCategory {
 
     @Override
     public void onResult(String result) {
-        super.onResult(result);
         if (result != null) {
             if (mLightController.isAvailable()) {
                 if (result.equals(COMMAND_TURN_OFF)) {
@@ -80,6 +79,11 @@ public class LightsSpeechCategory extends SpeechCategory {
                 }
             }
         }
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return mLightController.isAvailable();
     }
 
     private int convertEnglishNumberStringToInteger(String number) {

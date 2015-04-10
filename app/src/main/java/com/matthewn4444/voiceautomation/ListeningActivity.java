@@ -103,6 +103,12 @@ public class ListeningActivity extends ActionBarActivity {
                     mCaptionField.setText(R.string.prompt_locked);
                 }
             }
+
+            @Override
+            public void onCategoryUnavailable(SpeechCategory category) {
+                Toast.makeText(ListeningActivity.this, "'" + category.getActivationCommand()
+                        + "' is unavailable", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 }

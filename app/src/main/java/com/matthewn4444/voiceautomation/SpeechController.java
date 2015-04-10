@@ -73,6 +73,7 @@ public class SpeechController implements RecognitionListener {
         public void onPartialResult(String text);
         public void onSpeechResult(String text);
         public void onLock(boolean isLocked);
+        public void onCategoryUnavailable(SpeechCategory category);
     }
 
     public SpeechController(Context c, SpeechCategory[] categories) {
@@ -147,7 +148,14 @@ public class SpeechController implements RecognitionListener {
 
         SpeechCategory cate = mLookup.get(text);
         if (cate != null) {
-            switchSearch(text);
+            if (cate.isAvailable()) {
+                switchSearch(text);
+            } else {
+                if (mListener != null) {
+                    mListener.onCategoryUnavailable(cate);
+                }
+                endSpeech();
+            }
         } else if (!mIsLocked && text.equals(LOCK_PHRASE)) {
             switchSearch(LOCK_SEARCH);
         } else if (mIsLocked && text.equals(UNLOCK_PHRASE)) {

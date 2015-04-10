@@ -3,7 +3,7 @@ package com.matthewn4444.voiceautomation;
 import com.matthewn4444.voiceautomation.SpeechController.PartialReturnResult;
 import com.matthewn4444.voiceautomation.SpeechController.SpeechModel;
 
-public class SpeechCategory {
+public abstract class SpeechCategory {
     public final static String DefaultThreshold = "1e-1";
     public final static int DefaultTimeout = 10000;
 
@@ -13,13 +13,6 @@ public class SpeechCategory {
     private final String mMessage;
     private final String mAssetsGrammerFile;
     private final int mTimeout;
-
-    private OnSpeechResultListener mListener;
-
-    public interface OnSpeechResultListener {
-        public PartialReturnResult onParsePartialResult(SpeechCategory cate, PartialReturnResult result);
-        public String onSpeechResult(SpeechCategory cate, String result);
-    }
 
     public SpeechCategory(String activationPhrase, String assetsGrammerFile, SpeechModel model, String message) {
         this(activationPhrase, assetsGrammerFile, model, message, DefaultThreshold);
@@ -38,21 +31,16 @@ public class SpeechCategory {
         mTimeout = timeout;
     }
 
+    public abstract void onResult(String result);
+
+    public abstract boolean isAvailable();
+
     public String getGrammerFileName() {
         return mAssetsGrammerFile;
     }
 
     public PartialReturnResult filterPartialResult(PartialReturnResult result) {
-        if (mListener != null) {
-            result = mListener.onParsePartialResult(this, result);
-        }
         return result;
-    }
-
-    public void onResult(String result) {
-        if (mListener != null) {
-            mListener.onSpeechResult(this, result);
-        }
     }
 
     public void pause() {}
@@ -77,9 +65,5 @@ public class SpeechCategory {
 
     public int getTimeout() {
         return mTimeout;
-    }
-
-    public void setOnSpeechResultListener(OnSpeechResultListener listener) {
-        mListener = listener;
     }
 }
