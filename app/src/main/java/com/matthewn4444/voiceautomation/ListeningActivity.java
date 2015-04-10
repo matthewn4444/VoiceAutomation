@@ -96,6 +96,13 @@ public class ListeningActivity extends ActionBarActivity {
                     toast(text);
                 }
             }
+
+            @Override
+            public void onLock(boolean isLocked) {
+                if (isLocked) {
+                    mCaptionField.setText(R.string.prompt_locked);
+                }
+            }
         });
     }
 }

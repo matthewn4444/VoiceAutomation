@@ -27,7 +27,9 @@ public class SpeechController implements RecognitionListener {
     private static final String TAG = "SpeechController";
 
     private static final String CommandFileName = "commands.gram";
-    private static final String KWS_SEARCH = "wakeup";
+    private static final String LOCK_SEARCH = "lock";
+    private static final String KWS_SEARCH = "command";
+
 
     public static enum SpeechModel {
         DEFAULT, PHONETIC, LANGUAGE
@@ -45,7 +47,10 @@ public class SpeechController implements RecognitionListener {
     private Timer mTimer;
     private File mCommandFile;
     private boolean mIsReady;
+    private boolean mIsLocked;
     private int mTimeout;
+    private String LOCK_PHRASE;
+    private String UNLOCK_PHRASE;
 
     private SoundPool mSoundPool;
     private int mSoundStartId;
@@ -67,6 +72,7 @@ public class SpeechController implements RecognitionListener {
         public void onBeginSpeechCategory(SpeechCategory category);
         public void onPartialResult(String text);
         public void onSpeechResult(String text);
+        public void onLock(boolean isLocked);
     }
 
     public SpeechController(Context c, SpeechCategory[] categories) {
@@ -78,7 +84,10 @@ public class SpeechController implements RecognitionListener {
         mCategories = categories;
         mLookup = new HashMap<>();
         mIsReady = false;
+        mIsLocked = false;
         mTimeout = speechTimeout;
+        LOCK_PHRASE = mCtx.getString(R.string.command_default_lock);
+        UNLOCK_PHRASE = mCtx.getString(R.string.command_default_unlock);
 
         for (SpeechCategory cate: categories) {
             mLookup.put(cate.getActivationCommand(), cate);
@@ -124,7 +133,7 @@ public class SpeechController implements RecognitionListener {
 
     @Override
     public void onEndOfSpeech() {
-        if (!mRecognizer.getSearchName().equals(KWS_SEARCH))
+        if (!mRecognizer.getSearchName().equals(KWS_SEARCH) && !mIsLocked)
             switchSearch(KWS_SEARCH);
     }
 
@@ -139,6 +148,14 @@ public class SpeechController implements RecognitionListener {
         SpeechCategory cate = mLookup.get(text);
         if (cate != null) {
             switchSearch(text);
+        } else if (!mIsLocked && text.equals(LOCK_PHRASE)) {
+            switchSearch(LOCK_SEARCH);
+        } else if (mIsLocked && text.equals(UNLOCK_PHRASE)) {
+            mIsLocked = false;
+            if (mListener != null) {
+                mListener.onLock(false);
+            }
+            switchSearch(KWS_SEARCH);
         } else {
             if (mCurrentCategory != null) {
                 PartialReturnResult res = new PartialReturnResult(text);
@@ -159,12 +176,16 @@ public class SpeechController implements RecognitionListener {
 
     @Override
     public void onResult(Hypothesis hypothesis) {
-        if (hypothesis != null) {
-            String text = hypothesis.getHypstr();
-            speechFinishedWithResult(text);
-            mCurrentCategory = null;
-        } else {
-            speechFinishedWithResult(null);
+        if (!mIsLocked) {
+            if (hypothesis != null) {
+                String text = hypothesis.getHypstr();
+                if (!text.equals(UNLOCK_PHRASE)) {
+                    speechFinishedWithResult(text);
+                }
+                mCurrentCategory = null;
+            } else {
+                speechFinishedWithResult(null);
+            }
         }
     }
 
@@ -200,7 +221,8 @@ public class SpeechController implements RecognitionListener {
     @Override
     public void onTimeout() {
         endTimeout();
-        switchSearch(KWS_SEARCH);
+        if (!mIsLocked)
+            switchSearch(KWS_SEARCH);
     }
 
     public void shutdown() {
@@ -218,6 +240,12 @@ public class SpeechController implements RecognitionListener {
             mRecognizer.startListening(searchName);
             if (mListener != null) {
                 mListener.onBeginSpeechCategory(null);
+            }
+        } else if (searchName.equals(LOCK_SEARCH)) {
+            mIsLocked = true;
+            mRecognizer.startListening(searchName);
+            if (mListener != null) {
+                mListener.onLock(true);
             }
         } else {
             playSoundEffect(mSoundStartId);
@@ -239,7 +267,7 @@ public class SpeechController implements RecognitionListener {
                                 mTimer.schedule(new TimerTask() {
                                     @Override
                                     public void run() {
-                                        endSpeech(null);
+                                        endSpeech();
                                     }
                                 }, cate.getTimeout());
                             }
@@ -265,7 +293,11 @@ public class SpeechController implements RecognitionListener {
     public void resume() {
         if (mIsReady) {
             Log.v(TAG, "Resume speech recognition");
-            switchSearch(KWS_SEARCH);
+            if (mIsLocked) {
+                switchSearch(LOCK_SEARCH);
+            } else {
+                switchSearch(KWS_SEARCH);
+            }
         }
         setupSoundEffects();
     }
@@ -292,6 +324,8 @@ public class SpeechController implements RecognitionListener {
         mRecognizer.addListener(this);
 
         // Create keyword-activation search.
+        mRecognizer.addKeyphraseSearch(LOCK_SEARCH, UNLOCK_PHRASE);
+
         mRecognizer.addKeywordSearch(KWS_SEARCH, mCommandFile);
 
         // Add grammar searches
@@ -323,6 +357,7 @@ public class SpeechController implements RecognitionListener {
             for (SpeechCategory cate: mCategories) {
                 writeStream.write((cate.getCommandGrammerLine() + "\n").getBytes());
             }
+            writeStream.write((LOCK_PHRASE + " /" + SpeechCategory.DefaultThreshold + "/\n").getBytes());
             commandFile = new File(mCtx.getFilesDir() + "/" + CommandFileName);
         } catch(IOException e) {
             throw e;
@@ -345,14 +380,22 @@ public class SpeechController implements RecognitionListener {
         }
     }
 
+    private void endSpeech() {
+        endSpeech(null);
+    }
+
     private void endSpeech(final String text) {
+        endSpeech(text, KWS_SEARCH);
+    }
+
+    private void endSpeech(final String text, final String newSearch) {
         endTimeout();
         mRecognizer.cancel();
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
                 speechFinishedWithResult(text);
-                switchSearch(KWS_SEARCH);
+                switchSearch(newSearch);
             }
         });
     }
