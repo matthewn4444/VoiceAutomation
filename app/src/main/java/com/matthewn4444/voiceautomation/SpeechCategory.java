@@ -1,5 +1,7 @@
 package com.matthewn4444.voiceautomation;
 
+import android.graphics.drawable.Drawable;
+
 import com.matthewn4444.voiceautomation.SpeechController.PartialReturnResult;
 import com.matthewn4444.voiceautomation.SpeechController.SpeechModel;
 
@@ -34,6 +36,14 @@ public abstract class SpeechCategory {
     public abstract void onResult(String result);
 
     public abstract boolean isAvailable();
+
+    public abstract int getMainResDrawable();
+
+    public abstract Drawable getMainDrawable();
+
+    public abstract int getMainColor();
+
+    public abstract int getMainTextColor();
 
     public String getGrammerFileName() {
         return mAssetsGrammerFile;

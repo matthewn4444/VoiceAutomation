@@ -1,6 +1,8 @@
 package com.matthewn4444.voiceautomation.lights;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.widget.Toast;
 
 import com.matthewn4444.voiceautomation.R;
@@ -41,6 +43,26 @@ public class LightsSpeechCategory extends SpeechCategory {
         mLightController = controller;
 
         mLightController.connect();
+    }
+
+    @Override
+    public int getMainResDrawable() {
+        return R.drawable.light_bulb_on;
+    }
+
+    @Override
+    public Drawable getMainDrawable() {
+        return mCtx.getResources().getDrawable(getMainResDrawable());
+    }
+
+    @Override
+    public int getMainColor() {
+        return Color.YELLOW;
+    }
+
+    @Override
+    public int getMainTextColor() {
+        return mCtx.getResources().getColor(R.color.lights_on_main_text_color);
     }
 
     @Override

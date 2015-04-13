@@ -48,6 +48,7 @@ public class SpeechController implements RecognitionListener {
     private File mCommandFile;
     private boolean mIsReady;
     private boolean mIsLocked;
+    private boolean mPaused;
     private int mTimeout;
     private String LOCK_PHRASE;
     private String UNLOCK_PHRASE;
@@ -184,7 +185,7 @@ public class SpeechController implements RecognitionListener {
 
     @Override
     public void onResult(Hypothesis hypothesis) {
-        if (!mIsLocked) {
+        if (!mIsLocked && !mPaused) {
             if (hypothesis != null) {
                 String text = hypothesis.getHypstr();
                 if (!text.equals(UNLOCK_PHRASE)) {
@@ -287,6 +288,7 @@ public class SpeechController implements RecognitionListener {
     }
 
     public void pause() {
+        mPaused = true;
         Log.v(TAG, "Pause speech recognition");
         endTimeout();
         if (mRecognizer != null) {
@@ -299,6 +301,7 @@ public class SpeechController implements RecognitionListener {
     }
 
     public void resume() {
+        mPaused = false;
         if (mIsReady) {
             Log.v(TAG, "Resume speech recognition");
             if (mIsLocked) {
