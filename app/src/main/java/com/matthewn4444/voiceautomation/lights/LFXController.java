@@ -84,6 +84,12 @@ public class LFXController implements LightsSpeechCategory.ILightController {
         }
     }
 
+    @Override
+    public boolean isOn() {
+        return mIsConnected && mLNCtx.getAllLightsCollection().getFuzzyPowerState() ==
+                LFXTypes.LFXFuzzyPowerState.ON;
+    }
+
     private LFXHSBKColor internalGetColor() {
         List<LFXLight> lights = mLNCtx.getAllLightsCollection().getLights();
         if (lights.isEmpty())

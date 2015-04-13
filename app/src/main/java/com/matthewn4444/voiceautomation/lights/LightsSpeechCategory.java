@@ -28,6 +28,7 @@ public class LightsSpeechCategory extends SpeechCategory {
 
     public interface ILightController {
         public boolean isAvailable();
+        public boolean isOn();
         public void setBrightnessPercentage(int percentage);
         public int getBrightnessPercentage();
         public void turnOff();
@@ -59,7 +60,7 @@ public class LightsSpeechCategory extends SpeechCategory {
 
     @Override
     public float getMainImageOpacity() {
-        return mLightController.getBrightnessPercentage() / 100.0f;
+        return mLightController.isOn() ? mLightController.getBrightnessPercentage() / 100.0f : 0.0f;
     }
 
     @Override
