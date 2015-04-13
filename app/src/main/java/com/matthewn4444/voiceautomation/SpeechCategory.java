@@ -1,7 +1,5 @@
 package com.matthewn4444.voiceautomation;
 
-import android.graphics.drawable.Drawable;
-
 import com.matthewn4444.voiceautomation.SpeechController.PartialReturnResult;
 import com.matthewn4444.voiceautomation.SpeechController.SpeechModel;
 
@@ -15,22 +13,30 @@ public abstract class SpeechCategory {
     private final String mMessage;
     private final String mAssetsGrammerFile;
     private final int mTimeout;
+    private final ICategoryPresenter mPresenter;
 
-    public SpeechCategory(String activationPhrase, String assetsGrammerFile, SpeechModel model, String message) {
-        this(activationPhrase, assetsGrammerFile, model, message, DefaultThreshold);
+    public static interface ICategoryPresenter {
+        public void animateBackgroundColor(int to);
+        public void animateCaptionColor(int to);
+        public void animateMainImageOpacity(float to);
     }
 
-    public SpeechCategory(String activationPhrase, String assetsGrammerFile, SpeechModel model, String message, String threshold) {
-        this(activationPhrase, assetsGrammerFile, model, message, DefaultThreshold, DefaultTimeout);
+    public SpeechCategory(ICategoryPresenter presenter, String activationPhrase, String assetsGrammerFile, SpeechModel model, String message) {
+        this(presenter, activationPhrase, assetsGrammerFile, model, message, DefaultThreshold);
     }
 
-    public SpeechCategory(String activationPhrase, String assetsGrammerFile, SpeechModel model, String message, String threshold, int timeout) {
+    public SpeechCategory(ICategoryPresenter presenter, String activationPhrase, String assetsGrammerFile, SpeechModel model, String message, String threshold) {
+        this(presenter, activationPhrase, assetsGrammerFile, model, message, DefaultThreshold, DefaultTimeout);
+    }
+
+    public SpeechCategory(ICategoryPresenter presenter, String activationPhrase, String assetsGrammerFile, SpeechModel model, String message, String threshold, int timeout) {
         mActivationPhrase = activationPhrase;
         mAssetsGrammerFile = assetsGrammerFile;
         mModel = model;
         mMessage = message;
         mThreshold = threshold;
         mTimeout = timeout;
+        mPresenter = presenter;
     }
 
     public abstract void onResult(String result);
@@ -39,7 +45,9 @@ public abstract class SpeechCategory {
 
     public abstract int getMainResDrawable();
 
-    public abstract Drawable getMainDrawable();
+    public abstract int getBackResDrawable();
+
+    public abstract float getMainImageOpacity();
 
     public abstract int getMainColor();
 
@@ -75,5 +83,9 @@ public abstract class SpeechCategory {
 
     public int getTimeout() {
         return mTimeout;
+    }
+
+    protected ICategoryPresenter getPresenter() {
+        return mPresenter;
     }
 }

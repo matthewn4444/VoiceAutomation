@@ -49,10 +49,11 @@ public class ListeningActivity extends ActionBarActivity {
     }
 
     private void setupSpeechController() {
+        UIPresenter presenter = new UIPresenter(this);
         mCategories = new SpeechCategory[]{
-                new LightsSpeechCategory(this, mLightController)
+                new LightsSpeechCategory(this, presenter, mLightController)
         };
         mController = new SpeechController(this, mCategories);
-        mController.setSpeechListener(new UIPresenter(this));
+        mController.setSpeechListener(presenter);
     }
 }

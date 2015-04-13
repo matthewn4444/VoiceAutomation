@@ -2,7 +2,6 @@ package com.matthewn4444.voiceautomation.lights;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.widget.Toast;
 
 import com.matthewn4444.voiceautomation.R;
@@ -12,6 +11,9 @@ import com.matthewn4444.voiceautomation.SpeechController.SpeechModel;
 import java.security.InvalidParameterException;
 
 public class LightsSpeechCategory extends SpeechCategory {
+    private static final int ON_COLOR = Color.YELLOW;
+    private static final int OFF_COLOR = Color.GRAY;
+
     private final Context mCtx;
     private final ILightController mLightController;
 
@@ -34,8 +36,8 @@ public class LightsSpeechCategory extends SpeechCategory {
         public void disconnect();
     }
 
-    public LightsSpeechCategory(Context ctx, ILightController controller) {
-        super(ctx.getString(R.string.command_lights),
+    public LightsSpeechCategory(Context ctx, ICategoryPresenter presenter, ILightController controller) {
+        super(presenter, ctx.getString(R.string.command_lights),
                 ctx.getString(R.string.assets_lights_grammer_filename),
                 SpeechModel.DEFAULT,
                 ctx.getString(R.string.prompt_adjust_lights));
@@ -51,18 +53,25 @@ public class LightsSpeechCategory extends SpeechCategory {
     }
 
     @Override
-    public Drawable getMainDrawable() {
-        return mCtx.getResources().getDrawable(getMainResDrawable());
+    public int getBackResDrawable() {
+        return R.drawable.light_bulb_off;
+    }
+
+    @Override
+    public float getMainImageOpacity() {
+        return mLightController.getBrightnessPercentage() / 100.0f;
     }
 
     @Override
     public int getMainColor() {
-        return Color.YELLOW;
+        return blendColors(ON_COLOR, OFF_COLOR, getMainImageOpacity());
     }
 
     @Override
     public int getMainTextColor() {
-        return mCtx.getResources().getColor(R.color.lights_on_main_text_color);
+        return blendColors(mCtx.getResources().getColor(R.color.lights_on_main_text_color),
+                mCtx.getResources().getColor(R.color.lights_off_main_text_color),
+                getMainImageOpacity());
     }
 
     @Override
@@ -98,7 +107,9 @@ public class LightsSpeechCategory extends SpeechCategory {
                 } else {
                     Toast.makeText(mCtx, "Light Command '" + result + "' not supported",
                             Toast.LENGTH_SHORT).show();
+                    return;
                 }
+                updateColorForPresenter();
             }
         }
     }
@@ -106,6 +117,13 @@ public class LightsSpeechCategory extends SpeechCategory {
     @Override
     public boolean isAvailable() {
         return mLightController.isAvailable();
+    }
+
+    private void updateColorForPresenter() {
+        ICategoryPresenter presenter = getPresenter();
+        presenter.animateBackgroundColor(getMainColor());
+        presenter.animateCaptionColor(getMainTextColor());
+        presenter.animateMainImageOpacity(getMainImageOpacity());
     }
 
     private int convertEnglishNumberStringToInteger(String number) {
@@ -246,4 +264,11 @@ public class LightsSpeechCategory extends SpeechCategory {
         return Math.min(sum, 100);
     }
 
+    private static int blendColors(int color1, int color2, float ratio) {
+        final float inverseRation = 1f - ratio;
+        float r = (Color.red(color1) * ratio) + (Color.red(color2) * inverseRation);
+        float g = (Color.green(color1) * ratio) + (Color.green(color2) * inverseRation);
+        float b = (Color.blue(color1) * ratio) + (Color.blue(color2) * inverseRation);
+        return Color.rgb((int) r, (int) g, (int) b);
+    }
 }
