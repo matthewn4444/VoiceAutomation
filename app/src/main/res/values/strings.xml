@@ -10,6 +10,8 @@
     <!-- Commands -->
     <string name="command_lights">lights</string>
     <string name="command_default_lock">stop listening</string>
+    <string name="command_default_lock1">don\'t listen</string>
+    <string name="command_default_lock2">do not listen</string>
     <string name="command_default_unlock">start listening</string>
 
     <!-- Speech assets file names -->

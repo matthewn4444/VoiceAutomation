@@ -51,6 +51,8 @@ public class SpeechController implements RecognitionListener {
     private boolean mPaused;
     private int mTimeout;
     private String LOCK_PHRASE;
+    private String LOCK_PHRASE1;
+    private String LOCK_PHRASE2;
     private String UNLOCK_PHRASE;
 
     private SoundPool mSoundPool;
@@ -89,6 +91,8 @@ public class SpeechController implements RecognitionListener {
         mIsLocked = false;
         mTimeout = speechTimeout;
         LOCK_PHRASE = mCtx.getString(R.string.command_default_lock);
+        LOCK_PHRASE1 = mCtx.getString(R.string.command_default_lock1);
+        LOCK_PHRASE2 = mCtx.getString(R.string.command_default_lock2);
         UNLOCK_PHRASE = mCtx.getString(R.string.command_default_unlock);
 
         for (SpeechCategory cate: categories) {
@@ -157,7 +161,8 @@ public class SpeechController implements RecognitionListener {
                 }
                 endSpeech();
             }
-        } else if (!mIsLocked && text.equals(LOCK_PHRASE)) {
+        } else if (!mIsLocked && (text.equals(LOCK_PHRASE) || text.equals(LOCK_PHRASE1)
+                || text.equals(LOCK_PHRASE2))) {
             switchSearch(LOCK_SEARCH);
         } else if (mIsLocked && text.equals(UNLOCK_PHRASE)) {
             mIsLocked = false;
@@ -368,7 +373,12 @@ public class SpeechController implements RecognitionListener {
             for (SpeechCategory cate: mCategories) {
                 writeStream.write((cate.getCommandGrammerLine() + "\n").getBytes());
             }
+
+            // Add phrases to stop listening
             writeStream.write((LOCK_PHRASE + " /" + SpeechCategory.DefaultThreshold + "/\n").getBytes());
+            writeStream.write((LOCK_PHRASE1 + " /" + SpeechCategory.DefaultThreshold + "/\n").getBytes());
+            writeStream.write((LOCK_PHRASE2 + " /" + SpeechCategory.DefaultThreshold + "/\n").getBytes());
+
             commandFile = new File(mCtx.getFilesDir() + "/" + CommandFileName);
         } catch(IOException e) {
             throw e;
