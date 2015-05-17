@@ -232,6 +232,11 @@ public class LFXUDPGatewayConnection extends LFXGatewayConnection implements Soc
 			idleTimeoutTimer.cancel();
 			idleTimeoutTimer.purge();
 		}
+
+        // Avoids the glitch that causes a timeout every few seconds that may cause a crash
+        if (!socket.getServerRunning()) {
+            return;
+        }
 		
 		idleTimeoutTimer = LFXTimerUtils.getTimerTaskWithPeriod( getIdleTimerTask(), LFXSDKConstants.LFX_UDP_IDLE_TIMEOUT_INTERVAL, false);
 	}
