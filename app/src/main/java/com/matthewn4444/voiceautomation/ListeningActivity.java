@@ -1,16 +1,20 @@
 package com.matthewn4444.voiceautomation;
 
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.view.WindowManager;
 
 import com.matthewn4444.voiceautomation.lights.LFXController;
+import com.matthewn4444.voiceautomation.lights.LightsAutomator;
 import com.matthewn4444.voiceautomation.lights.LightsSpeechCategory;
 
 
-public class ListeningActivity extends ActionBarActivity {
+public class ListeningActivity extends AppCompatActivity {
+    public static final int MAX_LIGHT_BRIGHTNESS = 70;
+
     private SpeechCategory[] mCategories;
     private SpeechController mController;
+    private LightsAutomator mLightAutomator;
     private LightsSpeechCategory.ILightController mLightController;
 
     @Override
@@ -20,6 +24,15 @@ public class ListeningActivity extends ActionBarActivity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         mLightController = new LFXController(this);
+        mLightController.setOnConnectionChangedListener(new LightsSpeechCategory.ILightController.OnConnectionChangedListener() {
+            @Override
+            public void onConnectionChanged(int lightsConnected, boolean justConnected) {
+                if (mLightAutomator == null && justConnected) {
+                    // Initial connection with the lights have been made, now we can automate them
+                    mLightAutomator = new LightsAutomator(ListeningActivity.this, mLightController, MAX_LIGHT_BRIGHTNESS);
+                }
+            }
+        });
 
         setupSpeechController();
     }
@@ -28,6 +41,9 @@ public class ListeningActivity extends ActionBarActivity {
     protected void onPause() {
         super.onPause();
         mController.pause();
+        if (mLightAutomator != null) {
+            mLightAutomator.pause();
+        }
         for (SpeechCategory cate: mCategories) {
             cate.pause();
         }
@@ -36,6 +52,9 @@ public class ListeningActivity extends ActionBarActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (mLightAutomator != null) {
+            mLightAutomator.resume();
+        }
         mController.resume();
         for (SpeechCategory cate: mCategories) {
             cate.resume();

@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">VoiceAutomation</string>
 
+    <!-- Messages -->
+    <string name="prompt_ask_turn_on_location">In order to use light automation, we need to enable location get information about the sunset time, would you like to go and enable location?</string>
+
     <!-- Speech input prompt messages -->
     <string name="prompt_setup">Preparing speech recognition</string>
     <string name="prompt_ready">Ready for commands</string>

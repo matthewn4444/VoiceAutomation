@@ -27,6 +27,9 @@ public class LightsSpeechCategory extends SpeechCategory {
     private static final int BRIGHTNESS_STEP = 5;
 
     public interface ILightController {
+        public interface OnConnectionChangedListener {
+            public void onConnectionChanged(int lightsConnected, boolean justConnected);
+        }
         public boolean isAvailable();
         public boolean isOn();
         public void setBrightnessPercentage(int percentage);
@@ -35,6 +38,7 @@ public class LightsSpeechCategory extends SpeechCategory {
         public void turnOn();
         public void connect();
         public void disconnect();
+        public void setOnConnectionChangedListener(OnConnectionChangedListener listener);
     }
 
     public LightsSpeechCategory(Context ctx, ICategoryPresenter presenter, ILightController controller) {
