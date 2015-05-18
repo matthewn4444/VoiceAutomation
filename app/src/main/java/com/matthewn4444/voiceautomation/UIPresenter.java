@@ -204,6 +204,9 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
     }
 
     private void animateCategoryImage(SpeechCategory category, boolean show) {
+        if (category == null) {
+            return;
+        }
         mCurrentImageOpacity = category.getMainImageOpacity();
         mMainImage.setImageResource(category.getMainResDrawable());
         mMainImage.setAlpha(mCurrentImageOpacity);
