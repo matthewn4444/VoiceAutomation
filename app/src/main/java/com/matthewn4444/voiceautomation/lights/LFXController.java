@@ -1,6 +1,8 @@
 package com.matthewn4444.voiceautomation.lights;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 
 import java.util.List;
 import java.util.Timer;
@@ -43,11 +45,17 @@ public class LFXController implements LightsSpeechCategory.ILightController {
                         public void run() {
                             synchronized (mLightLock) {
                                 mIsConnected = true;
-                                if (mListener != null) {
-                                    mListener.onConnectionChanged(lightCollection.getLights().size(), true);
-                                }
+                                mStateChangeTimer.cancel();
                                 mStateChangeTimer = null;
                             }
+                            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (mListener != null) {
+                                        mListener.onConnectionChanged(lightCollection.getLights().size(), true);
+                                    }
+                                }
+                            });
                         }
                     }, LIGHT_CONNECTION_TIMEOUT);
                 }
@@ -66,11 +74,17 @@ public class LFXController implements LightsSpeechCategory.ILightController {
                         public void run() {
                             synchronized (mLightLock) {
                                 mIsConnected = false;
-                                if (mListener != null) {
-                                    mListener.onConnectionChanged(lightCollection.getLights().size(), false);
-                                }
+                                mStateChangeTimer.cancel();
                                 mStateChangeTimer = null;
                             }
+                            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                                @Override
+                                public void run() {
+                                    if (mListener != null) {
+                                        mListener.onConnectionChanged(lightCollection.getLights().size(), false);
+                                    }
+                                }
+                            });
                         }
                     }, LIGHT_CONNECTION_TIMEOUT);
                 }
@@ -86,7 +100,7 @@ public class LFXController implements LightsSpeechCategory.ILightController {
 
     @Override
     public boolean isAvailable() {
-        return mIsConnected && mLNCtx.getAllLightsCollection().getLights().size() > 0;
+        return mIsConnected && internalGetColor() != null && mLNCtx.getAllLightsCollection().getLights().size() > 0;
     }
 
     @Override
