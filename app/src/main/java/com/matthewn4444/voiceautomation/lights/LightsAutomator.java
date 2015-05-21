@@ -1,65 +1,44 @@
 package com.matthewn4444.voiceautomation.lights;
 
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
+import android.location.Location;
 
 import com.luckycatlabs.sunrisesunset.SunriseSunsetCalculator;
-import com.luckycatlabs.sunrisesunset.dto.Location;
-import com.matthewn4444.voiceautomation.R;
 
 import java.util.Calendar;
-
-import im.delight.android.location.SimpleLocation;
 
 public class LightsAutomator {
     private final Context mCtx;
     private final LightsSpeechCategory.ILightController mController;
     private final int mMaxBrightness;
-    private SimpleLocation mLocationObj;
+    private final Location mLocation;
     private SunriseSunsetCalculator mCalculator;
+    private boolean mLookingForLocation = false;
 
-    public LightsAutomator(Context ctx, LightsSpeechCategory.ILightController controller, int maxBrightness) {
+    public LightsAutomator(Context ctx, Location location, LightsSpeechCategory.ILightController controller, int maxBrightness) {
         mCtx = ctx;
+        mLocation = location;
         mController = controller;
         mMaxBrightness = maxBrightness;
-        mLocationObj = new SimpleLocation(mCtx);
 
-        // Since the sunsetApi needs location to get the sunset timing, we need to ask users
-        if (!mLocationObj.hasLocationEnabled()) {
-            new AlertDialog.Builder(mCtx)
-                    .setMessage(R.string.prompt_ask_turn_on_location)
-                    .setTitle(R.string.app_name)
-                    .setNegativeButton(android.R.string.no, null)
-                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            mLocationObj.setListener(new SimpleLocation.Listener() {
-                                @Override
-                                public void onPositionChanged() {
-                                    // Get the first position and we are good
-                                    mLocationObj.setListener(null);
-                                    gotLocation();
-                                }
-                            });
-                            SimpleLocation.openSettings(mCtx);
-                        }
-                    })
-                    .show();
-        } else {
-            gotLocation();
-        }
+        init();
     }
 
-    public void pause() {
-        if (mLocationObj != null) {
-            mLocationObj.endUpdates();
-        }
-    }
+    private void init() {
+        Calendar now = Calendar.getInstance();
+        mCalculator = new SunriseSunsetCalculator(new com.luckycatlabs.sunrisesunset.dto.Location(
+                mLocation.getLatitude(), mLocation.getLongitude()), now.getTimeZone());
 
-    public void resume() {
-        if (mLocationObj != null) {
-            mLocationObj.beginUpdates();
+        // Set the light on startup according to the time of day
+        if (mController.isAvailable()) {
+            // TODO detect if we should be off auto for the day
+            int brightness = autoBrightnessForNow();
+            if (brightness == 0) {
+                mController.turnOff();
+            } else {
+                mController.turnOn();
+                mController.setBrightnessPercentage(brightness);
+            }
         }
     }
 
@@ -89,24 +68,5 @@ public class LightsAutomator {
 
     private Calendar calculateNightTime() {
         return mCalculator.getCivilSunsetCalendarForDate(Calendar.getInstance());
-    }
-
-    private synchronized void gotLocation() {
-        Location loc = new Location(mLocationObj.getLatitude(), mLocationObj.getLongitude());
-        mCalculator = new SunriseSunsetCalculator(loc, Calendar.getInstance().getTimeZone());
-        mLocationObj.endUpdates();
-        mLocationObj = null;
-
-        // Set the light on startup according to the time of day
-        if (mController.isAvailable()) {
-            // TODO detect if we should be off auto for the day
-            int brightness = autoBrightnessForNow();
-            if (brightness == 0) {
-                mController.turnOff();
-            } else {
-                mController.turnOn();
-                mController.setBrightnessPercentage(brightness);
-            }
-        }
     }
 }

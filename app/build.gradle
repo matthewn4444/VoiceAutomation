@@ -19,11 +19,18 @@ android {
     }
 }
 
+
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:22.1.1'
     compile 'com.luckycatlabs:SunriseSunsetCalculator:1.2'
     compile project(':lifx-sdk')
+
+    // Location dependencies
+    compile 'pl.charmas.android:android-reactive-location:0.6@aar'
+    compile 'com.google.android.gms:play-services-location:7.3.0'
+    compile 'io.reactivex:rxjava:1.0.10'
 }
 
 ant.importBuild 'assets.xml'
