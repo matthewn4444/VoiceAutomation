@@ -112,7 +112,9 @@ public class LocationHelper {
             synchronized (this) {
                 if (mAskToEnableLocation) {
                     mAskToEnableLocation = false;
-                    queryLocation(mFoundListener);
+                    if (hasLocationEnabled()) {
+                        queryLocation(mFoundListener);
+                    }
                 }
             }
         }
