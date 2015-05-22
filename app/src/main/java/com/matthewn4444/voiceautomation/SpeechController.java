@@ -241,8 +241,10 @@ public class SpeechController implements RecognitionListener {
 
     public void shutdown() {
         endTimeout();
-        mRecognizer.cancel();
-        mRecognizer.shutdown();
+        if (mRecognizer != null) {
+            mRecognizer.cancel();
+            mRecognizer.shutdown();
+        }
     }
 
     private void switchSearch(final String searchName) {
