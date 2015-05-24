@@ -29,7 +29,7 @@ public class LFXController implements LightsSpeechCategory.ILightController {
     public LFXController(Context ctx) {
         mCtx = ctx;
         mLNCtx = LFXClient.getSharedInstance(ctx).getLocalNetworkContext();
-        mIsConnected = false;
+        mIsConnected = internalGetColor() != null && mLNCtx.getAllLightsCollection().getLights().size() > 0;
 
         mLNCtx.getAllLightsCollection().addLightCollectionListener(new LFXLightCollection.LFXLightCollectionListener() {
             @Override
@@ -105,12 +105,21 @@ public class LFXController implements LightsSpeechCategory.ILightController {
 
     @Override
     public void setBrightnessPercentage(int percentage) {
+        setBrightnessPercentage(percentage, 0);
+    }
+
+    @Override
+    public void setBrightnessPercentage(int percentage, int duration) {
         if (mIsConnected) {
             float brightness = Math.max(Math.min(100.0f, (float) percentage / 100.0f), 0.0f);
             LFXHSBKColor color = internalGetColor();
             LFXHSBKColor newColor = LFXHSBKColor.getColor(color.getHue(), color.getSaturation(),
                     brightness, color.getKelvin());
-            mLNCtx.getAllLightsCollection().setColor(newColor);
+            if (duration == 0) {
+                mLNCtx.getAllLightsCollection().setColor(newColor);
+            } else {
+                mLNCtx.getAllLightsCollection().setColorOverDuration(newColor, duration);
+            }
         }
     }
 

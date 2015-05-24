@@ -33,6 +33,7 @@ public class LightsSpeechCategory extends SpeechCategory {
         public boolean isAvailable();
         public boolean isOn();
         public void setBrightnessPercentage(int percentage);
+        public void setBrightnessPercentage(int percentage, int duration);
         public int getBrightnessPercentage();
         public void turnOff();
         public void turnOn();
