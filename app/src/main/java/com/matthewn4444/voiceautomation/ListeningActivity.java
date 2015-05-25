@@ -31,18 +31,7 @@ public class ListeningActivity extends AppCompatActivity implements
         setContentView(R.layout.activity_listening);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        mLightController = new LFXController(this);
-        mLightController.setOnConnectionChangedListener(new LightsSpeechCategory.ILightController.OnConnectionChangedListener() {
-            @Override
-            public void onConnectionChanged(int lightsConnected, boolean justConnected) {
-                if (!mLightsIsReady && justConnected) {
-                    // Initial connection with the lights have been made, now we can automate them
-                    mLightsIsReady = true;
-                    startLightAutomation();
-                }
-            }
-        });
-
+        setupLightController();
         setupSpeechController();
 
         mLocationHelper = new LocationHelper(this);
@@ -82,6 +71,27 @@ public class ListeningActivity extends AppCompatActivity implements
         };
         mController = new SpeechController(this, mCategories);
         mController.setSpeechListener(presenter);
+    }
+
+    private void setupLightController() {
+        mLightController = new LFXController(this);
+        if (!mLightController.isAvailable()) {
+            mLightController.setOnConnectionChangedListener(
+                    new LightsSpeechCategory.ILightController.OnConnectionChangedListener() {
+                @Override
+                public void onConnectionChanged(int lightsConnected, boolean justConnected) {
+                    if (!mLightsIsReady && justConnected && mLightController.isAvailable()) {
+                        // Initial connection with the lights have been made, now we can automate them
+                        mLightsIsReady = true;
+                        startLightAutomation();
+                    }
+                }
+            });
+            mLightController.connect();
+        } else {
+            mLightsIsReady = true;
+            startLightAutomation();
+        }
     }
 
     private void startLightAutomation() {

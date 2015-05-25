@@ -49,8 +49,6 @@ public class LightsSpeechCategory extends SpeechCategory {
                 ctx.getString(R.string.prompt_adjust_lights));
         mCtx = ctx;
         mLightController = controller;
-
-        mLightController.connect();
     }
 
     @Override
