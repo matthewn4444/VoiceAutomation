@@ -473,6 +473,10 @@ public class LFXMessage
 
 	public byte[] getMessageDataRepresentation()
 	{
+		if (path == null) {
+			return null;
+		}
+
 		byte[] data = null;
 
 		if( payload != null)

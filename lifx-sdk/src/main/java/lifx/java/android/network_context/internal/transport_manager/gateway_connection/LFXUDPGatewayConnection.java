@@ -175,6 +175,10 @@ public class LFXUDPGatewayConnection extends LFXGatewayConnection implements Soc
 		
 		byte[] messageData = nextMessage.getMessageDataRepresentation();
 
+        if (messageData == null) {
+            return;
+        }
+
 		try
 		{
 			socket.sendMessage( new SocketMessage( messageData, InetAddress.getByName( getGatewayDescriptor().getHost()).getAddress(), getGatewayDescriptor().getPort()));
