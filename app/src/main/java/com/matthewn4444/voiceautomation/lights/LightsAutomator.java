@@ -17,6 +17,7 @@ public class LightsAutomator {
     public static final String ExtraStartTime = "intent.extra.start.time";
     public static final String ExtraIntervalSec = "intent.extra.interval.sec";
     public static final String ExtraFinalBrightness = "intent.extra.final.brightness";
+    public static final int LateNightHourOnLimit = 3;       // Lights will be on till after 3
 
     private final Context mCtx;
     private final LightsSpeechCategory.ILightController mController;
@@ -122,8 +123,8 @@ public class LightsAutomator {
         Calendar sunset = calculateSunsetTime();
         Calendar night = calculateNightTime();
 
-        if (now.after(night)) {
-            // It is after the night time, so max brightness
+        if (now.after(night) || now.get(Calendar.HOUR_OF_DAY) < LateNightHourOnLimit) {
+            // It is after the night time or before 3 am, so max brightness
             return mMaxBrightness;
         } else if (now.before(sunset)) {
             // It is still daylight, so no brightness
