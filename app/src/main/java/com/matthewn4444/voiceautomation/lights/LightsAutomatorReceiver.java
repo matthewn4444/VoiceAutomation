@@ -60,7 +60,11 @@ public class LightsAutomatorReceiver extends BroadcastReceiver {
                         new LightsSpeechCategory.ILightController.OnConnectionChangedListener() {
                     @Override
                     public void onConnectionChanged(int lightsConnected, boolean justConnected) {
-                        setLights(lights, currentBrightness, thisIter == 1 ? 0 : SlowLightDuration);
+                        if (lights.isAvailable()) {
+                            setLights(lights, currentBrightness, thisIter == 1 ? 0 : SlowLightDuration);
+                        } else {
+                            lights.disconnect();
+                        }
                     }
                 });
                 lights.connect();
