@@ -23,4 +23,8 @@
 
     <!-- Default Settings -->
     <integer name="settings_default_speech_timeout">3000</integer>
+
+    <!-- Settings and Keys -->
+    <string name="settings_key_cached_latitude">settings.key.cached.latitude</string>
+    <string name="settings_key_cached_longitude">settings.key.cached.longitude</string>
 </resources>

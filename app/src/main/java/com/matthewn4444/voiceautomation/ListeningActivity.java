@@ -104,6 +104,7 @@ public class ListeningActivity extends AppCompatActivity implements
     @Override
     public void onLocationFound(Location location) {
         if (location != null) {
+            mLocationHelper.cacheLocation();
             mLocationIsReady = true;
             startLightAutomation();
         } else {

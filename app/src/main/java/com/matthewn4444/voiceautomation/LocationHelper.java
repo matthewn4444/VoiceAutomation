@@ -1,12 +1,13 @@
 package com.matthewn4444.voiceautomation;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.location.LocationManager;
+import android.preference.PreferenceManager;
 import android.provider.Settings;
 
 import com.google.android.gms.location.LocationRequest;
@@ -22,7 +23,7 @@ public class LocationHelper {
     private static final String LowAccuracyProvider = LocationManager.NETWORK_PROVIDER;
     private static final int SubscriptionTimeout = 10;      // 10 Sec
 
-    private final Activity mActivity;
+    private final Context mCtx;
     private final String mProvider;
     private final LocationManager mManager;
 
@@ -35,14 +36,14 @@ public class LocationHelper {
         void onLocationFound(Location location);
     }
 
-    public LocationHelper(Activity activity) {
-        this(activity, false);
+    public LocationHelper(Context context) {
+        this(context, false);
     }
 
-    public LocationHelper(Activity activity, boolean useHighAccuracy) {
-        mActivity = activity;
+    public LocationHelper(Context context, boolean useHighAccuracy) {
+        mCtx = context;
         mProvider = useHighAccuracy ? HighAccuracyProvider : LowAccuracyProvider;
-        mManager = (LocationManager) activity.getSystemService(Context.LOCATION_SERVICE);
+        mManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
         mAskToEnableLocation = false;
     }
 
@@ -50,9 +51,9 @@ public class LocationHelper {
         return mManager.isProviderEnabled(mProvider);
     }
 
-    public void openLocationSettings(Activity activity) {
+    public void openLocationSettings() {
         mAskToEnableLocation = true;
-        activity.startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+        mCtx.startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
     }
 
     public void queryLocation(final OnLocationFoundListener listener) {
@@ -60,14 +61,14 @@ public class LocationHelper {
         if (hasLocationEnabled()) {
             internalQueryLocation();
         } else {
-            new AlertDialog.Builder(mActivity)
+            new AlertDialog.Builder(mCtx)
                     .setMessage(R.string.prompt_ask_turn_on_location)
                     .setTitle(R.string.app_name)
                     .setNegativeButton(android.R.string.no, null)
                     .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            openLocationSettings(mActivity);
+                            openLocationSettings();
                         }
                     }).show();
         }
@@ -85,7 +86,7 @@ public class LocationHelper {
                     .setExpirationDuration(1000 * SubscriptionTimeout)
                     .setNumUpdates(1);
 
-            ReactiveLocationProvider locationProvider = new ReactiveLocationProvider(mActivity);
+            ReactiveLocationProvider locationProvider = new ReactiveLocationProvider(mCtx);
             mSubscription = locationProvider.getUpdatedLocation(request)
                     .timeout(SubscriptionTimeout, TimeUnit.SECONDS)
                     .subscribe(new Action1<Location>() {
@@ -133,4 +134,34 @@ public class LocationHelper {
             }
         }
     }
+
+    public void cacheLocation() {
+        if (mLocation != null) {
+            double latitude = mLocation.getLatitude();
+            double longitude = mLocation.getLongitude();
+            if (latitude != 0 && longitude != 0) {
+                SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(mCtx);
+                pref.edit()
+                        .putFloat(mCtx.getString(R.string.settings_key_cached_latitude), (float) latitude)
+                        .putFloat(mCtx.getString(R.string.settings_key_cached_longitude), (float)longitude)
+                        .apply();
+            }
+        }
+    }
+
+    public Location getCacheLocation() {
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(mCtx);
+        float latitude = pref.getFloat(mCtx.getString(R.string.settings_key_cached_latitude), 0);
+        float longitude = pref.getFloat(mCtx.getString(R.string.settings_key_cached_longitude), 0);
+
+        if (latitude == 0 && longitude == 0) {
+            return null;
+        } else {
+            Location location = new Location("");
+            location.setLatitude(latitude);
+            location.setLongitude(longitude);
+            return location;
+        }
+    }
+
 }
