@@ -29,8 +29,11 @@ public class LFXController implements LightsSpeechCategory.ILightController {
     public LFXController(Context ctx) {
         mCtx = ctx;
         mLNCtx = LFXClient.getSharedInstance(ctx).getLocalNetworkContext();
-        mIsConnected = internalGetColor() != null && mLNCtx.getAllLightsCollection().getLights().size() > 0;
+        mIsConnected = false;
 
+        // Reset everything so that the light commands will work
+        mLNCtx.resetAllCaches();
+        mLNCtx.getAllLightsCollection().removeAllLightCollectionListeners();
         mLNCtx.getAllLightsCollection().addLightCollectionListener(new LFXLightCollection.LFXLightCollectionListener() {
             @Override
             public void lightCollectionDidAddLight(final LFXLightCollection lightCollection, LFXLight light) {

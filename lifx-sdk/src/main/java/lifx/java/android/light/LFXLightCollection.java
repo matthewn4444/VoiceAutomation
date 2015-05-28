@@ -217,7 +217,7 @@ public abstract class LFXLightCollection extends LFXLightTarget implements LFXLi
 		}
 	} 
 	
-	public void removeAllLightCollectionListeners( LFXLightCollection lightCollection )
+	public void removeAllLightCollectionListeners()
 	{
 		listeners.clear();
 	}
