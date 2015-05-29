@@ -3,6 +3,7 @@ package com.matthewn4444.voiceautomation.lights;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import java.util.List;
 import java.util.Timer;
@@ -15,10 +16,10 @@ import lifx.java.android.light.LFXLight;
 import lifx.java.android.light.LFXLightCollection;
 import lifx.java.android.network_context.LFXNetworkContext;
 
-public class LFXController implements LightsSpeechCategory.ILightController {
+public class LFXController implements LightsSpeechCategory.ILightController,
+        LFXLightCollection.LFXLightCollectionListener {
     public final int LIGHT_CONNECTION_TIMEOUT = 500;
 
-    private final Context mCtx;
     private final LFXNetworkContext mLNCtx;
 
     private OnConnectionChangedListener mListener;
@@ -27,78 +28,8 @@ public class LFXController implements LightsSpeechCategory.ILightController {
     private final Object mLightLock = new Object();
 
     public LFXController(Context ctx) {
-        mCtx = ctx;
         mLNCtx = LFXClient.getSharedInstance(ctx).getLocalNetworkContext();
-        mIsConnected = false;
-
-        // Reset everything so that the light commands will work
-        mLNCtx.resetAllCaches();
-        mLNCtx.getAllLightsCollection().removeAllLightCollectionListeners();
-        mLNCtx.getAllLightsCollection().addLightCollectionListener(new LFXLightCollection.LFXLightCollectionListener() {
-            @Override
-            public void lightCollectionDidAddLight(final LFXLightCollection lightCollection, LFXLight light) {
-                // Checks to make sure all lights have connected before throwing the event
-                synchronized (mLightLock) {
-                    if (mStateChangeTimer != null) {
-                        mStateChangeTimer.cancel();
-                    }
-                    mStateChangeTimer = new Timer();
-                    mStateChangeTimer.schedule(new TimerTask() {
-                        @Override
-                        public void run() {
-                            synchronized (mLightLock) {
-                                mIsConnected = true;
-                                mStateChangeTimer.cancel();
-                                mStateChangeTimer = null;
-                            }
-                            new Handler(Looper.getMainLooper()).post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (mListener != null) {
-                                        mListener.onConnectionChanged(lightCollection.getLights().size(), true);
-                                    }
-                                }
-                            });
-                        }
-                    }, LIGHT_CONNECTION_TIMEOUT);
-                }
-            }
-
-            @Override
-            public void lightCollectionDidRemoveLight(final LFXLightCollection lightCollection, LFXLight light) {
-                // Checks to make sure all lights have disconnected before throwing the event
-                synchronized (mLightLock) {
-                    if (mStateChangeTimer != null) {
-                        mStateChangeTimer.cancel();
-                    }
-                    mStateChangeTimer = new Timer();
-                    mStateChangeTimer.schedule(new TimerTask() {
-                        @Override
-                        public void run() {
-                            synchronized (mLightLock) {
-                                mIsConnected = false;
-                                mStateChangeTimer.cancel();
-                                mStateChangeTimer = null;
-                            }
-                            new Handler(Looper.getMainLooper()).post(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (mListener != null) {
-                                        mListener.onConnectionChanged(lightCollection.getLights().size(), false);
-                                    }
-                                }
-                            });
-                        }
-                    }, LIGHT_CONNECTION_TIMEOUT);
-                }
-            }
-            @Override
-            public void lightCollectionDidChangeLabel(LFXLightCollection lightCollection, String label) {}
-            @Override
-            public void lightCollectionDidChangeColor(LFXLightCollection lightCollection, LFXHSBKColor color) {}
-            @Override
-            public void lightCollectionDidChangeFuzzyPowerState(LFXLightCollection lightCollection, LFXTypes.LFXFuzzyPowerState fuzzyPowerState) {}
-        });
+        mIsConnected = internalGetColor() != null && mLNCtx.getAllLightsCollection().getLights().size() > 0;
     }
 
     @Override
@@ -169,11 +100,79 @@ public class LFXController implements LightsSpeechCategory.ILightController {
 
     @Override
     public void connect() {
+        mLNCtx.getAllLightsCollection().removeLightCollectionListener(this);
+        mLNCtx.getAllLightsCollection().addLightCollectionListener(this);
         mLNCtx.connect();
     }
 
     @Override
     public void disconnect() {
+        mLNCtx.getAllLightsCollection().removeLightCollectionListener(this);
         mLNCtx.disconnect();
     }
+
+    @Override
+    public void lightCollectionDidAddLight(final LFXLightCollection lightCollection, LFXLight light) {
+        // Checks to make sure all lights have connected before throwing the event
+        Log.i("lunch", "Light connected " + lightCollection.getLights().size());
+        synchronized (mLightLock) {
+            if (mStateChangeTimer != null) {
+                mStateChangeTimer.cancel();
+            }
+            mStateChangeTimer = new Timer();
+            mStateChangeTimer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    synchronized (mLightLock) {
+                        mIsConnected = true;
+                        mStateChangeTimer.cancel();
+                        mStateChangeTimer = null;
+                    }
+                    new Handler(Looper.getMainLooper()).post(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (mListener != null) {
+                                mListener.onConnectionChanged(lightCollection.getLights().size(), true);
+                            }
+                        }
+                    });
+                }
+            }, LIGHT_CONNECTION_TIMEOUT);
+        }
+    }
+
+    @Override
+    public void lightCollectionDidRemoveLight(final LFXLightCollection lightCollection, LFXLight light) {
+        // Checks to make sure all lights have disconnected before throwing the event
+        synchronized (mLightLock) {
+            if (mStateChangeTimer != null) {
+                mStateChangeTimer.cancel();
+            }
+            mStateChangeTimer = new Timer();
+            mStateChangeTimer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    synchronized (mLightLock) {
+                        mIsConnected = false;
+                        mStateChangeTimer.cancel();
+                        mStateChangeTimer = null;
+                    }
+                    new Handler(Looper.getMainLooper()).post(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (mListener != null) {
+                                mListener.onConnectionChanged(lightCollection.getLights().size(), false);
+                            }
+                        }
+                    });
+                }
+            }, LIGHT_CONNECTION_TIMEOUT);
+        }
+    }
+    @Override
+    public void lightCollectionDidChangeLabel(LFXLightCollection lightCollection, String label) {}
+    @Override
+    public void lightCollectionDidChangeColor(LFXLightCollection lightCollection, LFXHSBKColor color) {}
+    @Override
+    public void lightCollectionDidChangeFuzzyPowerState(LFXLightCollection lightCollection, LFXTypes.LFXFuzzyPowerState fuzzyPowerState) {}
 }
