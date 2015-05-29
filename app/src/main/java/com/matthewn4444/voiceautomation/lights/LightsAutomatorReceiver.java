@@ -29,11 +29,13 @@ public class LightsAutomatorReceiver extends BroadcastReceiver {
                 Log.e(TAG, "Received the intent but one of the fields is invalid (Start: "
                         + startMill + ", Interval: " + secPerInterval
                         + ", Final: " + finalBrightness + ")");
+                LightsAutomator.cancelAutomator(context);
                 return;
             }
 
             // Calculate the next brightness
             Calendar now = Calendar.getInstance();
+
             final int thisIter = LightsAutomator.calculateInterval(now, startMill, secPerInterval);
             final int currentBrightness = (int)((thisIter * 1.0f /
                     LightsAutomator.ScheduleNumberOfIntervals) * finalBrightness);
@@ -42,14 +44,15 @@ public class LightsAutomatorReceiver extends BroadcastReceiver {
             // conditions are in order:
             // 1. Wifi is on
             // 2. SSID matches where the user has their lights connected to
-            // 3. The "auto" flag is on (which means users have not manually adjusted lights)
+            // 3. If the user has not yet changed the lights using this app
             // 4. Lights are available
+
             ConnectivityManager connManager = (ConnectivityManager)
                     context.getSystemService(Context.CONNECTIVITY_SERVICE);
             NetworkInfo wifiController = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
 
-            // TODO check if the auto setting exists
-            if (wifiController.isConnected()) {
+            // If the user has interacted with the lights today, then we will not automate the lights
+            if (wifiController.isConnected() && LightsAutomator.isAutomationEnabled(context)) {
                 WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
                 WifiInfo wifiInfo = wifiManager.getConnectionInfo();
                 // TODO check the SSID to match the one in settings once settings is implemented: wifiInfo.getSSID()
@@ -71,14 +74,15 @@ public class LightsAutomatorReceiver extends BroadcastReceiver {
                 if (lights.isAvailable()) {
                     setLights(lights, currentBrightness, thisIter == 1 ? 0 : SlowLightDuration);
                 }
+            }
 
-                // When at the end of the intervals, end the repeated intervals
-                if (thisIter >= LightsAutomator.ScheduleNumberOfIntervals) {
-                    LightsAutomator.cancelAutomator(context);
-                }
+            // When at the end of the intervals, end the repeated intervals
+            if (thisIter >= LightsAutomator.ScheduleNumberOfIntervals) {
+                LightsAutomator.cancelAutomator(context);
             }
         } else {
             Log.e(TAG, "Major issue that the intent was not set to the alarm!");
+            LightsAutomator.cancelAutomator(context);
         }
     }
 

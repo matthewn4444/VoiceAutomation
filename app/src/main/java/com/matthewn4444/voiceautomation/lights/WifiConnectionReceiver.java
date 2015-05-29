@@ -124,7 +124,9 @@ public class WifiConnectionReceiver extends BroadcastReceiver {
             Calendar now = Calendar.getInstance();
             long disconnection = mPref.getLong(mLastDisconnectionSettingsKey, 0);
             if ((now.getTimeInMillis() - disconnection) > StartAutomationThresholdMin * 60 * 1000) {
-                // TODO remove the "auto" field in settings
+                // Remove the pref that dictates the user has interacted today and set automation back to auto
+                LightsAutomator.enableAutomation(context);
+
                 LocationHelper locationHelper = new LocationHelper(context);
                 if (locationHelper.hasLocationEnabled()) {
                     locationHelper.queryLocation(new LocationHelper.OnLocationFoundListener() {

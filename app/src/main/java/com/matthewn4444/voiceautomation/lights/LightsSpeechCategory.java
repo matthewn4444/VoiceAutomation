@@ -114,6 +114,9 @@ public class LightsSpeechCategory extends SpeechCategory {
                     return;
                 }
                 updateColorForPresenter();
+
+                // Record the last time the user edited the lights to avoid light automation changes
+                LightsAutomator.disableAutomation(mCtx);
             }
         }
     }

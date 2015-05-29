@@ -5,9 +5,11 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.luckycatlabs.sunrisesunset.SunriseSunsetCalculator;
+import com.matthewn4444.voiceautomation.R;
 
 import java.util.Calendar;
 
@@ -18,6 +20,8 @@ public class LightsAutomator {
     public static final String ExtraIntervalSec = "intent.extra.interval.sec";
     public static final String ExtraFinalBrightness = "intent.extra.final.brightness";
     public static final int LateNightHourOnLimit = 3;       // Lights will be on till after 3
+
+    private static final int ResKeyLastLightInteraction = R.string.settings_key_last_light_user_interaction;
 
     private final Context mCtx;
     private final LightsSpeechCategory.ILightController mController;
@@ -94,13 +98,43 @@ public class LightsAutomator {
         }
     }
 
+    static void enableAutomation(Context context) {
+        PreferenceManager.getDefaultSharedPreferences(context).edit()
+                .remove(context.getString(ResKeyLastLightInteraction))
+                .apply();
+    }
+
+    static void disableAutomation(Context context) {
+        PreferenceManager.getDefaultSharedPreferences(context).edit()
+                .putLong(context.getString(ResKeyLastLightInteraction), System.currentTimeMillis())
+                .apply();
+    }
+
+    static boolean isAutomationEnabled(Context context) {
+        Calendar now = Calendar.getInstance();
+        Calendar lastLightInteraction = Calendar.getInstance();
+        long then = PreferenceManager.getDefaultSharedPreferences(context)
+                .getLong(context.getString(ResKeyLastLightInteraction), 0);
+        if (then == 0) {
+            return true;
+        }
+        lastLightInteraction.setTimeInMillis(then);
+        boolean isEnabled = lastLightInteraction.get(Calendar.YEAR) != now.get(Calendar.YEAR)
+                ||  lastLightInteraction.get(Calendar.MONTH) != now.get(Calendar.MONTH)
+                || lastLightInteraction.get(Calendar.DAY_OF_MONTH) != now.get(Calendar.DAY_OF_MONTH);
+        if (isEnabled) {
+            enableAutomation(context);
+        }
+        return isEnabled;
+    }
+
     private void init() {
         Calendar now = Calendar.getInstance();
         mCalculator = new SunriseSunsetCalculator(new com.luckycatlabs.sunrisesunset.dto.Location(
                 mLocation.getLatitude(), mLocation.getLongitude()), now.getTimeZone());
 
         // Set the light on startup according to the time of day
-        if (mController.isAvailable()) {
+        if (mController.isAvailable() && isAutomationEnabled(mCtx)) {
             // TODO detect if we should be off auto for the day
             int brightness = autoBrightnessForNow();
             if (brightness == 0) {
