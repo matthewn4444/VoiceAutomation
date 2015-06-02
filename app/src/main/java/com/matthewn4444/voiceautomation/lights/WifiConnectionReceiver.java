@@ -7,13 +7,11 @@ import android.content.SharedPreferences;
 import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-import com.matthewn4444.voiceautomation.ListeningActivity;
 import com.matthewn4444.voiceautomation.LocationHelper;
 import com.matthewn4444.voiceautomation.R;
 
@@ -100,8 +98,7 @@ public class WifiConnectionReceiver extends BroadcastReceiver {
     private void locationLightsReadyAndConnected(final Context context, Location location,
                                                  final LightsSpeechCategory.ILightController controller) {
         // Automate the lights
-        new LightsAutomator(context, location, controller,
-                ListeningActivity.MAX_LIGHT_BRIGHTNESS);
+        new LightsAutomator(context, location, controller);
 
         // Safe way to make sure that the lights are adjusted correctly due to network latency
         new Handler().postDelayed(new Runnable() {
@@ -113,12 +110,7 @@ public class WifiConnectionReceiver extends BroadcastReceiver {
     }
 
     private void onConnection(final Context context, Intent intent) {
-        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-        WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-        String ssid = wifiInfo.getSSID();
-        if (!ssid.equals(UnknownSSID)) {
-            // TODO check if the SSID is the same as the lights, implement when settings is done
-
+        if (LightsAutomator.isAutomationAllowedBySSID(context)) {
             // Once the wifi was off for more than 10 min and then connected, we can start getting
             // a location and start the light automation
             Calendar now = Calendar.getInstance();
@@ -126,6 +118,11 @@ public class WifiConnectionReceiver extends BroadcastReceiver {
             if ((now.getTimeInMillis() - disconnection) > StartAutomationThresholdMin * 60 * 1000) {
                 // Remove the pref that dictates the user has interacted today and set automation back to auto
                 LightsAutomator.enableAutomation(context);
+
+                // Check if light automation upon wifi is disabled
+                if (mPref.getBoolean(context.getString(R.string.settings_light_auto_disable_wifi_key), false)) {
+                    return;
+                }
 
                 LocationHelper locationHelper = new LocationHelper(context);
                 if (locationHelper.hasLocationEnabled()) {

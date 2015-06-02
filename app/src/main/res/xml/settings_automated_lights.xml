@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <PreferenceCategory android:title="@string/settings_general_light_cate_title">
+        <!-- Potentially dangerous if user changes activation to random words not in dictionary
+        <com.matthewn4444.voiceautomation.settings.preferences.SummaryEditTextPreference-->
+            <!--android:title="@string/settings_general_light_activation_command_title"-->
+            <!--android:key="@string/settings_general_light_activation_command_key"-->
+            <!--android:defaultValue="@string/settings_default_activation_command_lights"/>
+        -->
+        <com.matthewn4444.voiceautomation.settings.preferences.NumberPickerPreference
+            android:title="@string/settings_general_light_dim_brighten_step_title"
+            android:key="@string/settings_general_light_dim_brighten_step_key"
+            android:summary="@string/settings_general_light_dim_brighten_step_summary"
+            android:defaultValue="@integer/settings_default_dim_brighten_step"
+            app:min="2"
+            app:max="10"/>
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/settings_light_auto_cate_scenarios_title">
+        <CheckBoxPreference
+            android:title="@string/settings_light_auto_disable_wifi_title"
+            android:key="@string/settings_light_auto_disable_wifi_key"
+            android:summary="@string/settings_light_auto_disable_wifi_summary"/>
+
+        <CheckBoxPreference
+            android:title="@string/settings_light_auto_disable_startup_title"
+            android:key="@string/settings_light_auto_disable_startup_key"
+            android:summary="@string/settings_light_auto_disable_startup_summary"
+            android:disableDependentsState="true"/>
+
+        <CheckBoxPreference
+            android:title="@string/setting_light_auto_sunset_automation_disable_title"
+            android:key="@string/setting_light_auto_sunset_automation_disable_key"
+            android:summary="@string/setting_light_auto_sunset_automation_disable_summary"
+            android:disableDependentsState="true"/>
+        <com.matthewn4444.voiceautomation.settings.preferences.NumberPickerPreference
+            android:title="@string/setting_light_auto_sunset_automation_step_title"
+            android:key="@string/setting_light_auto_sunset_automation_step_key"
+            android:summary="@string/setting_light_auto_sunset_automation_step_summary"
+            android:dependency="@string/setting_light_auto_sunset_automation_disable_key"
+            android:defaultValue="@integer/settings_default_sunset_automation_step"
+            app:min="5"
+            app:max="20"/>
+        <com.matthewn4444.voiceautomation.settings.preferences.NumberPickerPreference
+            android:title="@string/setting_light_auto_sunset_automation_step_duration_title"
+            android:key="@string/setting_light_auto_sunset_automation_step_duration_key"
+            android:summary="@string/setting_light_auto_sunset_automation_step_duration_summary"
+            android:dependency="@string/setting_light_auto_sunset_automation_disable_key"
+            android:defaultValue="@integer/settings_default_sunset_automation_step_duration_sec"
+            app:min="1"
+            app:max="10"/>
+
+        <CheckBoxPreference
+            android:title="@string/setting_light_auto_even_user_interacts_title"
+            android:key="@string/setting_light_auto_even_user_interacts_key"
+            android:summary="@string/setting_light_auto_even_user_interacts_summary"/>
+
+    </PreferenceCategory>
+    <PreferenceCategory android:title="@string/settings_light_auto_cate_properties_title">
+        <CheckBoxPreference
+            android:title="@string/setting_light_auto_lock_to_network_title"
+            android:key="@string/setting_light_auto_lock_to_network_key"
+            android:summary="@string/setting_light_auto_lock_to_network_summary"/>
+        <com.matthewn4444.voiceautomation.settings.preferences.SummaryEditTextPreference
+            android:title="@string/setting_light_auto_enter_ssid_title"
+            android:key="@string/setting_light_auto_enter_ssid_key"
+            android:dependency="@string/setting_light_auto_lock_to_network_key"
+            app:emptyText="@string/setting_light_auto_enter_ssid_default_summary"/>
+
+        <CheckBoxPreference
+            android:title="@string/setting_light_location_hardcode_location_title"
+            android:key="@string/setting_light_location_hardcode_location_key"
+            android:summary="@string/setting_light_location_hardcode_location_summary"/>
+        <com.matthewn4444.voiceautomation.settings.preferences.SummaryEditTextPreference
+            android:title="@string/setting_light_location_latitude_title"
+            android:key="@string/settings_key_cached_latitude"
+            android:dependency="@string/setting_light_location_hardcode_location_key"
+            android:inputType="numberDecimal|numberSigned"
+            app:emptyText="@string/setting_light_location_field_default_summary"/>
+        <com.matthewn4444.voiceautomation.settings.preferences.SummaryEditTextPreference
+            android:title="@string/setting_light_location_longitude_title"
+            android:key="@string/settings_key_cached_longitude"
+            android:dependency="@string/setting_light_location_hardcode_location_key"
+            android:inputType="numberDecimal|numberSigned"
+            app:emptyText="@string/setting_light_location_field_default_summary"/>
+
+        <com.matthewn4444.voiceautomation.settings.preferences.TimePickerPreference
+            android:title="@string/settings_light_auto_night_time_title"
+            android:key="@string/settings_light_auto_night_time_key"
+            app:defaultHour="@integer/settings_default_last_night_hour"/>
+
+        <com.matthewn4444.voiceautomation.settings.preferences.SliderPreference
+            android:title="@string/settings_light_auto_max_automated_brightness_title"
+            android:key="@string/settings_light_auto_max_automated_brightness_key"
+            android:dialogMessage="@string/settings_light_auto_max_automated_brightness_message"
+            android:defaultValue="1"
+            app:label="@string/settings_light_auto_max_automated_brightness_message_value_label"
+            app:suffix="@string/settings_light_auto_max_automated_brightness_message_value_suffix"/>
+
+    </PreferenceCategory>
+</PreferenceScreen>

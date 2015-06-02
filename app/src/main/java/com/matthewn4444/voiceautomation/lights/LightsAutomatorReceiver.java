@@ -5,10 +5,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.wifi.WifiInfo;
-import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.util.Log;
+
+import com.matthewn4444.voiceautomation.LazyPref;
+import com.matthewn4444.voiceautomation.R;
 
 import java.util.Calendar;
 
@@ -16,19 +17,22 @@ public class LightsAutomatorReceiver extends BroadcastReceiver {
     public static final String TAG = "LightsAutomatorReceiver";
 
     private static final int DisconnectLaterTimeout = 5000;
-    private static final int SlowLightDuration = 3000;
 
     @Override
     public void onReceive(final Context context, Intent intent) {
+        // Since the preference is not enabled, we should cancel and not automate the lights
+        if (!LightsAutomator.isSunsetAutomationEnabled(context)) {
+            LightsAutomator.cancelAutomator(context);
+            return;
+        }
+
         if (intent != null) {
             long startMill = intent.getLongExtra(LightsAutomator.ExtraStartTime, 0);
             int secPerInterval = intent.getIntExtra(LightsAutomator.ExtraIntervalSec, 0);
-            int finalBrightness = intent.getIntExtra(LightsAutomator.ExtraFinalBrightness, 0);
 
-            if (startMill == 0 || secPerInterval == 0 || finalBrightness == 0) {
+            if (startMill == 0 || secPerInterval == 0) {
                 Log.e(TAG, "Received the intent but one of the fields is invalid (Start: "
-                        + startMill + ", Interval: " + secPerInterval
-                        + ", Final: " + finalBrightness + ")");
+                        + startMill + ", Interval: " + secPerInterval + ")");
                 LightsAutomator.cancelAutomator(context);
                 return;
             }
@@ -37,8 +41,10 @@ public class LightsAutomatorReceiver extends BroadcastReceiver {
             Calendar now = Calendar.getInstance();
 
             final int thisIter = LightsAutomator.calculateInterval(now, startMill, secPerInterval);
-            final int currentBrightness = (int)((thisIter * 1.0f /
-                    LightsAutomator.ScheduleNumberOfIntervals) * finalBrightness);
+            final int maxBrightness = LightsAutomator.getMaxBrightness(context);
+            final int currentBrightness = Math.min((int) ((thisIter * 1.0f /
+                    LightsAutomator.getScheduleNumberOfIntervals(context))
+                    * maxBrightness), maxBrightness);
 
             // In order for the lights to be turned on gradually, we need to make the following
             // conditions are in order:
@@ -52,19 +58,19 @@ public class LightsAutomatorReceiver extends BroadcastReceiver {
             NetworkInfo wifiController = connManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
 
             // If the user has interacted with the lights today, then we will not automate the lights
-            if (wifiController.isConnected() && LightsAutomator.isAutomationEnabled(context)) {
-                WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-                WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-                // TODO check the SSID to match the one in settings once settings is implemented: wifiInfo.getSSID()
-
+            if (wifiController.isConnected() && LightsAutomator.isAutomationEnabled(context)
+                    && LightsAutomator.isAutomationAllowedBySSID(context)) {
                 // Connect the lights and set the brightness
                 final LFXController lights = new LFXController(context);
+                final int slowLightDuration = thisIter == 1 ? 0 : 1000 * LazyPref.getIntDefaultRes(context,
+                        R.string.setting_light_auto_sunset_automation_step_duration_key,
+                        R.integer.settings_default_sunset_automation_step_duration_sec);
                 lights.setOnConnectionChangedListener(
                         new LightsSpeechCategory.ILightController.OnConnectionChangedListener() {
                     @Override
                     public void onConnectionChanged(int lightsConnected, boolean justConnected) {
                         if (lights.isAvailable()) {
-                            setLights(lights, currentBrightness, thisIter == 1 ? 0 : SlowLightDuration);
+                            setLights(lights, currentBrightness, slowLightDuration);
                         } else {
                             lights.disconnect();
                         }
@@ -72,12 +78,12 @@ public class LightsAutomatorReceiver extends BroadcastReceiver {
                 });
                 lights.connect();
                 if (lights.isAvailable()) {
-                    setLights(lights, currentBrightness, thisIter == 1 ? 0 : SlowLightDuration);
+                    setLights(lights, currentBrightness, slowLightDuration);
                 }
             }
 
             // When at the end of the intervals, end the repeated intervals
-            if (thisIter >= LightsAutomator.ScheduleNumberOfIntervals) {
+            if (thisIter >= LightsAutomator.getScheduleNumberOfIntervals(context)) {
                 LightsAutomator.cancelAutomator(context);
             }
         } else {

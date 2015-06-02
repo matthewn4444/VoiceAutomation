@@ -1,5 +1,8 @@
 package com.matthewn4444.voiceautomation;
 
+import android.content.Context;
+import android.preference.PreferenceManager;
+
 import com.matthewn4444.voiceautomation.SpeechController.PartialReturnResult;
 import com.matthewn4444.voiceautomation.SpeechController.SpeechModel;
 
@@ -7,13 +10,16 @@ public abstract class SpeechCategory {
     public final static String DefaultThreshold = "1e-1";
     public final static int DefaultTimeout = 10000;
 
+    private final Context mCtx;
     private final String mThreshold;
-    private final String mActivationPhrase;
     private final SpeechModel mModel;
     private final String mMessage;
     private final String mAssetsGrammerFile;
-    private final int mTimeout;
     private final ICategoryPresenter mPresenter;
+    private final String mSettingsActivationKey;
+    private final String mSettingsDefaultCommand;
+
+    private String mActivationPhrase;
 
     public static interface ICategoryPresenter {
         public void animateBackgroundColor(int to);
@@ -21,22 +27,23 @@ public abstract class SpeechCategory {
         public void animateMainImageOpacity(float to);
     }
 
-    public SpeechCategory(ICategoryPresenter presenter, String activationPhrase, String assetsGrammerFile, SpeechModel model, String message) {
-        this(presenter, activationPhrase, assetsGrammerFile, model, message, DefaultThreshold);
+    public SpeechCategory(Context context, ICategoryPresenter presenter, String defaultActivationCommand,
+                          String settingsActivationKey, String assetsGrammerFile, SpeechModel model, String message) {
+        this(context, presenter, defaultActivationCommand, settingsActivationKey, assetsGrammerFile, model, message, DefaultThreshold);
     }
 
-    public SpeechCategory(ICategoryPresenter presenter, String activationPhrase, String assetsGrammerFile, SpeechModel model, String message, String threshold) {
-        this(presenter, activationPhrase, assetsGrammerFile, model, message, DefaultThreshold, DefaultTimeout);
-    }
-
-    public SpeechCategory(ICategoryPresenter presenter, String activationPhrase, String assetsGrammerFile, SpeechModel model, String message, String threshold, int timeout) {
-        mActivationPhrase = activationPhrase;
+    public SpeechCategory(Context context, ICategoryPresenter presenter, String defaultActivationCommand,
+                          String settingsActivationKey, String assetsGrammerFile, SpeechModel model, String message, String threshold) {
+        mCtx = context;
+        mSettingsActivationKey = settingsActivationKey;
         mAssetsGrammerFile = assetsGrammerFile;
         mModel = model;
         mMessage = message;
         mThreshold = threshold;
-        mTimeout = timeout;
         mPresenter = presenter;
+        mSettingsDefaultCommand = defaultActivationCommand;
+
+        updateActivationCommandFromSettings();
     }
 
     public abstract void onResult(String result);
@@ -52,6 +59,13 @@ public abstract class SpeechCategory {
     public abstract int getMainColor();
 
     public abstract int getMainTextColor();
+
+    public boolean updateAndHasActivationCommand() {
+        String oldCommand = getActivationCommand();
+        updateActivationCommandFromSettings();
+        String newCommand = getActivationCommand();
+        return !oldCommand.equals(newCommand);
+    }
 
     public String getGrammerFileName() {
         return mAssetsGrammerFile;
@@ -81,11 +95,21 @@ public abstract class SpeechCategory {
         return mActivationPhrase;
     }
 
-    public int getTimeout() {
-        return mTimeout;
-    }
-
     protected ICategoryPresenter getPresenter() {
         return mPresenter;
+    }
+
+    protected Context getContext() {
+        return mCtx;
+    }
+
+    protected String getString(int key) {
+        return mCtx.getString(key);
+    }
+
+    private void updateActivationCommandFromSettings() {
+        mActivationPhrase = PreferenceManager.getDefaultSharedPreferences(mCtx)
+                .getString(mCtx.getString(R.string.settings_general_light_activation_command_key),
+                        mSettingsDefaultCommand);
     }
 }

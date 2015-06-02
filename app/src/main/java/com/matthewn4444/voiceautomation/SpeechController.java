@@ -49,7 +49,6 @@ public class SpeechController implements RecognitionListener {
     private boolean mIsReady;
     private boolean mIsLocked;
     private boolean mPaused;
-    private int mTimeout;
     private String LOCK_PHRASE;
     private String LOCK_PHRASE1;
     private String LOCK_PHRASE2;
@@ -79,17 +78,12 @@ public class SpeechController implements RecognitionListener {
         public void onCategoryUnavailable(SpeechCategory category);
     }
 
-    public SpeechController(Context c, SpeechCategory[] categories) {
-        this(c, categories, c.getResources().getInteger(R.integer.settings_default_speech_timeout));
-    }
-
-    public SpeechController(Context ctx, SpeechCategory[] categories, int speechTimeout) {
+    public SpeechController(Context ctx, SpeechCategory[] categories) {
         mCtx = ctx;
         mCategories = categories;
         mLookup = new HashMap<>();
         mIsReady = false;
         mIsLocked = false;
-        mTimeout = speechTimeout;
         LOCK_PHRASE = mCtx.getString(R.string.command_default_lock);
         LOCK_PHRASE1 = mCtx.getString(R.string.command_default_lock1);
         LOCK_PHRASE2 = mCtx.getString(R.string.command_default_lock2);
@@ -242,8 +236,10 @@ public class SpeechController implements RecognitionListener {
     public void shutdown() {
         endTimeout();
         if (mRecognizer != null) {
+            mRecognizer.removeListener(this);
             mRecognizer.cancel();
             mRecognizer.shutdown();
+            mRecognizer = null;
         }
     }
 
@@ -270,23 +266,21 @@ public class SpeechController implements RecognitionListener {
                 mDelay.postDelayed(new Runnable() {
                     @Override
                     public void run() {
-                        mRecognizer.startListening(searchName, mTimeout);
+                        mRecognizer.startListening(searchName, getSubCommandTimeout());
                         if (mListener != null) {
                             mListener.onBeginSpeechCategory(cate);
                         }
 
-                        // Timeout the current category if listening for too long
-                        if (cate.getTimeout() > 0) {
-                            synchronized (mTimerLock) {
-                                endTimeout();
-                                mTimer = new Timer();
-                                mTimer.schedule(new TimerTask() {
-                                    @Override
-                                    public void run() {
-                                        endSpeech();
-                                    }
-                                }, cate.getTimeout());
-                            }
+                        // Noise timeout, the above timeout restarts at each sound input
+                        synchronized (mTimerLock) {
+                            endTimeout();
+                            mTimer = new Timer();
+                            mTimer.schedule(new TimerTask() {
+                                @Override
+                                public void run() {
+                                    endSpeech();
+                                }
+                            }, getNoiseTimeout());
                         }
                     }
                 }, 250);
@@ -322,6 +316,16 @@ public class SpeechController implements RecognitionListener {
 
     public void setSpeechListener(SpeechListener listener) {
         mListener = listener;
+    }
+
+    private int getSubCommandTimeout() {
+        return 1000 * LazyPref.getIntDefaultRes(mCtx, R.string.settings_speech_timeout_key,
+                R.integer.settings_default_speech_keyword_timeout_min);
+    }
+
+    private int getNoiseTimeout() {
+        return 1000 * LazyPref.getIntDefaultRes(mCtx, R.string.settings_speech_noise_timeout_key,
+                R.integer.settings_default_speech_noise_timeout_min);
     }
 
     private void setupRecognizer(File assetsDir) throws IOException {

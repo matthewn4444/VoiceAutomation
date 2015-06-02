@@ -1,9 +1,12 @@
 package com.matthewn4444.voiceautomation.lights;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.preference.PreferenceManager;
 import android.widget.Toast;
 
+import com.matthewn4444.voiceautomation.LazyPref;
 import com.matthewn4444.voiceautomation.R;
 import com.matthewn4444.voiceautomation.SpeechCategory;
 import com.matthewn4444.voiceautomation.SpeechController.SpeechModel;
@@ -14,7 +17,7 @@ public class LightsSpeechCategory extends SpeechCategory {
     private static final int ON_COLOR = Color.YELLOW;
     private static final int OFF_COLOR = Color.GRAY;
 
-    private final Context mCtx;
+    private final SharedPreferences mPref;
     private final ILightController mLightController;
 
     // Commands
@@ -23,8 +26,6 @@ public class LightsSpeechCategory extends SpeechCategory {
     private static final String COMMAND_TURN_OFF = "turn off";
     private static final String COMMAND_TURN_ON = "turn on";
     private static final String COMMAND_PERCENT = "percent";
-
-    private static final int BRIGHTNESS_STEP = 5;
 
     public interface ILightController {
         public interface OnConnectionChangedListener {
@@ -43,12 +44,13 @@ public class LightsSpeechCategory extends SpeechCategory {
     }
 
     public LightsSpeechCategory(Context ctx, ICategoryPresenter presenter, ILightController controller) {
-        super(presenter, ctx.getString(R.string.command_lights),
+        super(ctx, presenter, ctx.getString(R.string.settings_default_activation_command_lights),
+                ctx.getString(R.string.settings_general_light_activation_command_key),
                 ctx.getString(R.string.assets_lights_grammer_filename),
                 SpeechModel.DEFAULT,
                 ctx.getString(R.string.prompt_adjust_lights));
-        mCtx = ctx;
         mLightController = controller;
+        mPref = PreferenceManager.getDefaultSharedPreferences(ctx);
     }
 
     @Override
@@ -73,8 +75,8 @@ public class LightsSpeechCategory extends SpeechCategory {
 
     @Override
     public int getMainTextColor() {
-        return blendColors(mCtx.getResources().getColor(R.color.lights_on_main_text_color),
-                mCtx.getResources().getColor(R.color.lights_off_main_text_color),
+        return blendColors(getContext().getResources().getColor(R.color.lights_on_main_text_color),
+                getContext().getResources().getColor(R.color.lights_off_main_text_color),
                 getMainImageOpacity());
     }
 
@@ -100,23 +102,23 @@ public class LightsSpeechCategory extends SpeechCategory {
                     mLightController.turnOn();
                 } else if (result.equals(COMMAND_BRIGHTER)) {
                     int brightness = mLightController.getBrightnessPercentage();
-                    mLightController.setBrightnessPercentage(brightness + BRIGHTNESS_STEP);
+                    mLightController.setBrightnessPercentage(brightness + getDimBrightenStep());
                 } else if (result.equals(COMMAND_DIMMER)) {
                     int brightness = mLightController.getBrightnessPercentage();
-                    mLightController.setBrightnessPercentage(brightness - BRIGHTNESS_STEP);
+                    mLightController.setBrightnessPercentage(brightness - getDimBrightenStep());
                 } else if (result.endsWith(COMMAND_PERCENT)) {
                     String text = result.substring(0, result.lastIndexOf(COMMAND_PERCENT));
                     int percent = convertEnglishNumberStringToInteger(text);
                     mLightController.setBrightnessPercentage(percent);
                 } else {
-                    Toast.makeText(mCtx, "Light Command '" + result + "' not supported",
+                    Toast.makeText(getContext(), "Light Command '" + result + "' not supported",
                             Toast.LENGTH_SHORT).show();
                     return;
                 }
                 updateColorForPresenter();
 
                 // Record the last time the user edited the lights to avoid light automation changes
-                LightsAutomator.disableAutomation(mCtx);
+                LightsAutomator.disableAutomation(getContext());
             }
         }
     }
@@ -131,6 +133,12 @@ public class LightsSpeechCategory extends SpeechCategory {
         presenter.animateBackgroundColor(getMainColor());
         presenter.animateCaptionColor(getMainTextColor());
         presenter.animateMainImageOpacity(getMainImageOpacity());
+    }
+
+    private int getDimBrightenStep() {
+        return LazyPref.getIntDefaultRes(getContext(),
+                R.string.settings_general_light_dim_brighten_step_key,
+                R.integer.settings_default_dim_brighten_step);
     }
 
     private int convertEnglishNumberStringToInteger(String number) {

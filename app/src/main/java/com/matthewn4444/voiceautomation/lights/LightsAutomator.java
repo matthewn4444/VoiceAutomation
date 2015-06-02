@@ -5,35 +5,33 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.luckycatlabs.sunrisesunset.SunriseSunsetCalculator;
+import com.matthewn4444.voiceautomation.LazyPref;
 import com.matthewn4444.voiceautomation.R;
 
 import java.util.Calendar;
 
 public class LightsAutomator {
     public static final String TAG = "LightsAutomator";
-    public static final int ScheduleNumberOfIntervals = 10;
     public static final String ExtraStartTime = "intent.extra.start.time";
     public static final String ExtraIntervalSec = "intent.extra.interval.sec";
-    public static final String ExtraFinalBrightness = "intent.extra.final.brightness";
-    public static final int LateNightHourOnLimit = 3;       // Lights will be on till after 3
 
     private static final int ResKeyLastLightInteraction = R.string.settings_key_last_light_user_interaction;
 
     private final Context mCtx;
     private final LightsSpeechCategory.ILightController mController;
-    private final int mMaxBrightness;
     private final Location mLocation;
     private SunriseSunsetCalculator mCalculator;
 
-    public LightsAutomator(Context ctx, Location location, LightsSpeechCategory.ILightController controller, int maxBrightness) {
+    public LightsAutomator(Context ctx, Location location, LightsSpeechCategory.ILightController controller) {
         mCtx = ctx;
         mLocation = location;
         mController = controller;
-        mMaxBrightness = maxBrightness;
 
         init();
     }
@@ -47,7 +45,7 @@ public class LightsAutomator {
         alarmMgr.cancel(in);
     }
 
-    static void scheduleSunsetGradualLightsOn(Context ctx, Location location, int maxBrightness) {
+    static void scheduleSunsetGradualLightsOn(Context ctx, Location location) {
         Calendar now = Calendar.getInstance();
 
         boolean alarmIsScheduled = (PendingIntent.getBroadcast(ctx, 0,
@@ -73,13 +71,12 @@ public class LightsAutomator {
         startTime.add(Calendar.MINUTE, -(int) (timeDiffSec / 60));
 
         timeDiffSec = ((endTime.getTimeInMillis() - startTime.getTimeInMillis()) * 1.0f / 1000);
-        int secPerInterval = (int)Math.ceil(timeDiffSec / ScheduleNumberOfIntervals);
+        int secPerInterval = (int)Math.ceil(timeDiffSec / getScheduleNumberOfIntervals(ctx));
 
         // Schedule the alarms
         Intent intent = new Intent(ctx, LightsAutomatorReceiver.class);
         intent.putExtra(ExtraStartTime, startTime.getTimeInMillis());
         intent.putExtra(ExtraIntervalSec, secPerInterval);
-        intent.putExtra(ExtraFinalBrightness, maxBrightness);
         PendingIntent alarmIntent = PendingIntent.getBroadcast(ctx, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
 
         Log.v(TAG, "Schedule lights for today from " + startTime.get(Calendar.HOUR_OF_DAY) + ":"
@@ -98,6 +95,11 @@ public class LightsAutomator {
         }
     }
 
+    static int getScheduleNumberOfIntervals(Context ctx) {
+        return LazyPref.getIntDefaultRes(ctx, R.string.setting_light_auto_sunset_automation_step_key,
+                R.integer.settings_default_sunset_automation_step);
+    }
+
     static void enableAutomation(Context context) {
         PreferenceManager.getDefaultSharedPreferences(context).edit()
                 .remove(context.getString(ResKeyLastLightInteraction))
@@ -110,11 +112,18 @@ public class LightsAutomator {
                 .apply();
     }
 
+    static boolean isSunsetAutomationEnabled(Context context) {
+        return !LazyPref.getBool(context, R.string.setting_light_auto_sunset_automation_disable_key);
+    }
+
     static boolean isAutomationEnabled(Context context) {
+        if (LazyPref.getBool(context, R.string.setting_light_auto_even_user_interacts_key)) {
+            return true;
+        }
+
         Calendar now = Calendar.getInstance();
         Calendar lastLightInteraction = Calendar.getInstance();
-        long then = PreferenceManager.getDefaultSharedPreferences(context)
-                .getLong(context.getString(ResKeyLastLightInteraction), 0);
+        long then = LazyPref.getLong(context, ResKeyLastLightInteraction);
         if (then == 0) {
             return true;
         }
@@ -128,14 +137,44 @@ public class LightsAutomator {
         return isEnabled;
     }
 
+    static boolean isAutomationAllowedBySSID(Context ctx) {
+        if (!LazyPref.getBool(ctx, R.string.setting_light_auto_lock_to_network_key, false)) {
+            // We do not care about restricting lights to SSID, so just allow it through
+            return true;
+        }
+        String savedSSID = LazyPref.getString(ctx, R.string.setting_light_auto_enter_ssid_key);
+        if (savedSSID == null) {
+            // Since there is no ssid set, then we will ignore it
+            return true;
+        }
+
+        // Try to match current SSID with settings
+        WifiManager wifiManager = (WifiManager) ctx.getSystemService(Context.WIFI_SERVICE);
+        WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+        String ssid = wifiInfo.getSSID();
+        if (ssid.charAt(0) == '<') {        // <unknown ssid>, when internet is not connected
+            return false;
+        }
+        return ssid.substring(1, ssid.length() - 1).equals(savedSSID);
+    }
+
+    public void reschedule() {
+        cancelAutomator(mCtx);
+        if (isSunsetAutomationEnabled(mCtx)) {
+            scheduleSunsetGradualLightsOn(mCtx, mLocation);
+        }
+    }
+
     private void init() {
         Calendar now = Calendar.getInstance();
         mCalculator = new SunriseSunsetCalculator(new com.luckycatlabs.sunrisesunset.dto.Location(
                 mLocation.getLatitude(), mLocation.getLongitude()), now.getTimeZone());
 
         // Set the light on startup according to the time of day
-        if (mController.isAvailable() && isAutomationEnabled(mCtx)) {
-            // TODO detect if we should be off auto for the day
+        if (mController.isAvailable()
+                && !LazyPref.getBool(mCtx, R.string.settings_light_auto_disable_startup_key)
+                && isAutomationEnabled(mCtx)
+                && LightsAutomator.isAutomationAllowedBySSID(mCtx)) {
             int brightness = autoBrightnessForNow();
             if (brightness == 0) {
                 mController.setBrightnessPercentage(0);
@@ -146,9 +185,14 @@ public class LightsAutomator {
             }
         }
 
-        // Automate the lights to gradually turn on
-        if (now.before(calculateNightTime())) {
-            scheduleSunsetGradualLightsOn(mCtx, mLocation, mMaxBrightness);
+        // If we disable the light automation during sunset we should cancel it
+        if (isSunsetAutomationEnabled(mCtx)) {
+            // Automate the lights to gradually turn on
+            if (now.before(calculateNightTime())) {
+                scheduleSunsetGradualLightsOn(mCtx, mLocation);
+            }
+        } else {
+            cancelAutomator(mCtx);
         }
     }
 
@@ -156,10 +200,11 @@ public class LightsAutomator {
         Calendar now = Calendar.getInstance();
         Calendar sunset = calculateSunsetTime();
         Calendar night = calculateNightTime();
+        Calendar lateNightTime = getLateNightTime();
 
-        if (now.after(night) || now.get(Calendar.HOUR_OF_DAY) < LateNightHourOnLimit) {
-            // It is after the night time or before 3 am, so max brightness
-            return mMaxBrightness;
+        if (now.after(night) || now.before(lateNightTime)) {
+            // It is after the night time or before the late night set in settings, so max brightness
+            return getMaxBrightness(mCtx);
         } else if (now.before(sunset)) {
             // It is still daylight, so no brightness
             return 0;
@@ -167,8 +212,28 @@ public class LightsAutomator {
             // Calculate the brightness since we are in between the sunset and night time
             long total = night.getTimeInMillis() - sunset.getTimeInMillis();
             long currently = now.getTimeInMillis() - sunset.getTimeInMillis();
-            return (int)((currently * 1.0f / total) * mMaxBrightness);
+            return (int)((currently * 1.0f / total) * getMaxBrightness(mCtx));
         }
+    }
+
+    private Calendar getLateNightTime() {
+        Calendar ret = Calendar.getInstance();
+        Calendar then = Calendar.getInstance();
+        long timeMill = LazyPref.getLong(mCtx, R.string.settings_light_auto_night_time_key);
+        if (timeMill == 0) {
+            // Set default time
+            ret.set(Calendar.HOUR_OF_DAY, mCtx.getResources().getInteger(R.integer.settings_default_last_night_hour));
+            ret.set(Calendar.MINUTE, 0);
+        } else {
+            then.setTimeInMillis(timeMill);
+            ret.set(Calendar.HOUR_OF_DAY, then.get(Calendar.HOUR_OF_DAY));
+            ret.set(Calendar.MINUTE, then.get(Calendar.MINUTE));
+        }
+        return ret;
+    }
+
+    static int getMaxBrightness(Context ctx) {
+        return (int)(100.0f * LazyPref.getFloat(ctx, R.string.settings_light_auto_max_automated_brightness_key, 1));
     }
 
     static int calculateInterval(Calendar now, long startTime, int secPerInterval) {

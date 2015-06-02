@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/switchButton"
+        android:title=""
+        android:actionLayout="@layout/settings_switch_actionbar_layout"
+        android:orderInCategory="100"
+        android:showAsAction="always"
+        app:showAsAction="always"/>
+</menu>

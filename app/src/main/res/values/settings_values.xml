@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Default Settings -->
+    <integer name="settings_default_speech_keyword_timeout_min">3</integer>
+    <integer name="settings_default_speech_noise_timeout_min">10</integer>
+    <integer name="settings_default_dim_brighten_step">5</integer>
+    <integer name="settings_default_last_night_hour">3</integer>
+    <integer name="settings_default_sunset_automation_step">10</integer>
+    <integer name="settings_default_sunset_automation_step_duration_sec">3</integer>
+    <string name="settings_default_activation_command_lights">lights</string>
+
+    <!-- Settings and Keys -->
+    <string name="settings_key_cached_latitude">settings.key.cached.latitude</string>
+    <string name="settings_key_cached_longitude">settings.key.cached.longitude</string>
+
+    <string name="settings_key_last_spammed_wifi_time_connection">settings.key.last.spammed.wifi.time.connection</string>
+    <string name="settings_key_last_spammed_wifi_time_disconnection">settings.key.last.spammed.wifi.time.disconnection</string>
+    <string name="settings_key_last_wifi_time_disconnection">settings.key.last.wifi.time.disconnection</string>
+
+    <string name="settings_key_last_light_user_interaction">settings.key.last.light.user.interaction</string>
+
+    <!-- Speech Settings -->
+    <string name="settings_speech_header_title">Speech</string>
+
+    <string name="settings_speech_timeout_title">Speech Timeout (sec)</string>
+    <string name="settings_speech_timeout_key">settings.key.speech.timeout</string>
+    <string name="settings_speech_timeout_summary">Ends voice input after a couple of seconds if unable to recognize command.</string>
+
+    <string name="settings_speech_noise_timeout_title">Speech Noise Timeout (sec)</string>
+    <string name="settings_speech_noise_timeout_key">settings.key.speech.noise.timeout</string>
+    <string name="settings_speech_noise_timeout_summary">Ends voice input after a couple of seconds when waiting for command with noise in the background.</string>
+
+    <!-- General Light Settings -->
+    <string name="settings_general_light_cate_title">General Settings</string>
+    <string name="settings_general_light_enable_lights_key">settings.key.general.light.enable.lights</string>
+
+    <string name="settings_general_light_activation_command_title">Activation Command</string>z
+    <string name="settings_general_light_activation_command_key">settings.key.general.light.activation.command</string>
+
+    <string name="settings_general_light_dim_brighten_step_title">Dim/Brighten Step (%)</string>
+    <string name="settings_general_light_dim_brighten_step_key">settings.key.general.light.dim.brighten.step</string>
+    <string name="settings_general_light_dim_brighten_step_summary">When using the voice commands "Brighter" and "Dimmer", this will increase/decrease the light percentage by the inputted amount.</string>
+
+    <!-- Light Automation Settings -->
+    <string name="settings_light_auto_header_title">Lights</string>
+    <string name="settings_light_auto_cate_scenarios_title">Automation Scenarios</string>
+    <string name="settings_light_auto_cate_properties_title">Automation Properties</string>
+
+    <string name="settings_light_auto_disable_wifi_title">Disable Automation Upon Wifi</string>
+    <string name="settings_light_auto_disable_wifi_key">settings.key.light.auto.disable.wifi</string>
+    <string name="settings_light_auto_disable_wifi_summary">Do not automate lights when wifi connects after being disconnected for a period of time. Lights normally adjust brightness to the time of day.</string>
+
+    <string name="settings_light_auto_disable_startup_title">Disable Automation On Startup</string>
+    <string name="settings_light_auto_disable_startup_key">settings.key.light.auto.disable.startup</string>
+    <string name="settings_light_auto_disable_startup_summary">Do not automate lights when app starts. Lights normally adjust brightness to the time of day.</string>
+
+    <string name="setting_light_auto_sunset_automation_disable_title">Disable Sunset Automation</string>
+    <string name="setting_light_auto_sunset_automation_disable_key">settings.key.light.auto.sunset.automation.disable</string>
+    <string name="setting_light_auto_sunset_automation_disable_summary">Do not turn lights on gradually when the sun is setting.</string>
+
+    <string name="setting_light_auto_sunset_automation_step_title">Sunset Automation Steps</string>
+    <string name="setting_light_auto_sunset_automation_step_key">settings.key.light.auto.sunset.automation.step</string>
+    <string name="setting_light_auto_sunset_automation_step_summary">Set how many steps automation increases the light brightness during the time the sun goes down.</string>
+
+    <string name="setting_light_auto_sunset_automation_step_duration_title">Sunset Step Duration (sec)</string>
+    <string name="setting_light_auto_sunset_automation_step_duration_key">settings.key.light.auto.sunset.automation.step.duration</string>
+    <string name="setting_light_auto_sunset_automation_step_duration_summary">Set the duration of the change in light brightness. The larger the value, the more smooth and more unnoticeable the change is.</string>
+
+    <string name="setting_light_auto_even_user_interacts_title">Automate Regardless of Input</string>
+    <string name="setting_light_auto_even_user_interacts_key">settings.key.light.auto.even.user.interacts</string>
+    <string name="setting_light_auto_even_user_interacts_summary">If a user changes the lights using this app, automation is disabled until the next day. This ignores that and always enables light automation.</string>
+
+    <string name="setting_light_auto_lock_to_network_title">Restrict Automation to SSID</string>
+    <string name="setting_light_auto_lock_to_network_key">settings.key.light.auto.lock.to.network</string>
+    <string name="setting_light_auto_lock_to_network_summary">Light automation uses the local network to discover and adjust lightbulbs. You can force automation to a specific SSID.</string>
+
+    <string name="setting_light_auto_enter_ssid_title">Enter SSID</string>
+    <string name="setting_light_auto_enter_ssid_key">settings.key.light.auto.enter.ssid</string>
+    <string name="setting_light_auto_enter_ssid_default_summary">SSID not specified</string>
+
+    <string name="settings_light_auto_night_time_title">Automate Lights Till</string>
+    <string name="settings_light_auto_night_time_key">settings.key.light.auto.night.time</string>
+
+    <string name="settings_light_auto_max_automated_brightness_title">Max Automated Brightness</string>
+    <string name="settings_light_auto_max_automated_brightness_key">settings.key.light.auto.max.automated.brightness</string>
+    <string name="settings_light_auto_max_automated_brightness_message">Please set the maximum brightness that the light automation will use.\n</string>
+    <string name="settings_light_auto_max_automated_brightness_message_value_label">Value: </string>
+    <string name="settings_light_auto_max_automated_brightness_message_value_suffix">%</string>
+
+    <!-- Light Automation Location Settings -->
+    <string name="setting_light_location_hardcode_location_title">Hardcode Location</string>
+    <string name="setting_light_location_hardcode_location_key">settings.key.light.location.hardcode.location</string>
+    <string name="setting_light_location_hardcode_location_summary">When automating the lights, it needs the location to calculate sunset. You can hardcode the location so the app never asks for location. This makes automation faster without needing to query location if set for one location.</string>
+
+    <string name="setting_light_location_field_default_summary">0 (Not used)</string>
+    <string name="setting_light_location_latitude_title">Set Latitude</string>
+    <string name="setting_light_location_longitude_title">Set Longitude</string>
+</resources>

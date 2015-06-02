@@ -47,7 +47,7 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
         mMainImageHolder = (ViewGroup) activity.findViewById(R.id.main_image_bolder);
         mMainImage = (ImageView) activity.findViewById(R.id.main_image_top);
         mMainBackImage = (ImageView) activity.findViewById(R.id.main_image_bottom);
-        mCaptionField.setText(R.string.prompt_setup);
+        speechHasReset();
 
         mMainImageSlideIn = AnimationUtils.loadAnimation(mActivity, R.anim.slide_in_main_image);
         mMainImageSlideOut = AnimationUtils.loadAnimation(mActivity, R.anim.slide_out_main_image);
@@ -181,6 +181,25 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
         });
         animator.start();
         mCurrentImageOpacity = to;
+    }
+
+    public void speechHasReset() {
+        mCaptionField.setText(R.string.prompt_setup);
+    }
+
+    public void immediatelyHideCategory() {
+        mCurrentBackgroundColor = Color.BLACK;
+        mCurrentCaptionColor = Color.WHITE;
+        mCurrentImageOpacity = 1.0f;
+
+        mCategoryImageIsShowing = false;
+        mMainImage.setVisibility(View.GONE);
+        mMainBackImage.setVisibility(View.GONE);
+        mMainImageHolder.setVisibility(View.GONE);
+
+        // TODO remove hardcode for color
+        mActivity.getWindow().getDecorView().setBackgroundColor(Color.BLACK);
+        mCaptionField.setTextColor(Color.WHITE);
     }
 
     private void cancelTimer() {

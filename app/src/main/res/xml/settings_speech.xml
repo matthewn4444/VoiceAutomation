@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <com.matthewn4444.voiceautomation.settings.preferences.NumberPickerPreference
+        android:title="@string/settings_speech_timeout_title"
+        android:key="@string/settings_speech_timeout_key"
+        android:summary="@string/settings_speech_timeout_summary"
+        android:defaultValue="@integer/settings_default_speech_keyword_timeout_min"
+        app:max="10"
+        app:min="1"/>
+    <com.matthewn4444.voiceautomation.settings.preferences.NumberPickerPreference
+        android:title="@string/settings_speech_noise_timeout_title"
+        android:key="@string/settings_speech_noise_timeout_key"
+        android:summary="@string/settings_speech_noise_timeout_summary"
+        android:defaultValue="@integer/settings_default_speech_noise_timeout_min"
+        app:max="20"
+        app:min="2"/>
+</PreferenceScreen>

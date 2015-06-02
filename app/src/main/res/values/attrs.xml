@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="NumberPickerPreference">
+        <attr name="max" format="integer" />
+        <attr name="min" format="integer" />
+    </declare-styleable>
+    <declare-styleable name="SummaryEditTextPreference">
+        <attr name="emptyText" format="string" />
+    </declare-styleable>
+    <declare-styleable name="TimePickerPreference">
+        <attr name="defaultHour" format="integer" />
+        <attr name="defaultMin" format="integer" />
+    </declare-styleable>
+    <declare-styleable name="SliderPreference">
+        <attr name="label" format="string" />
+        <attr name="suffix" format="string" />
+    </declare-styleable>
+</resources>

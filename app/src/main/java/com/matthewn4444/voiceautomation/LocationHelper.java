@@ -57,6 +57,12 @@ public class LocationHelper {
     }
 
     public void queryLocation(final OnLocationFoundListener listener) {
+        // User selected to hardcode location, so we send back that data
+        if (isLocationHardcoded()) {
+            listener.onLocationFound(getCacheLocation());
+            return;
+        }
+
         mFoundListener = listener;
         if (hasLocationEnabled()) {
             internalQueryLocation();
@@ -122,6 +128,10 @@ public class LocationHelper {
     }
 
     public Location getLastLocation() {
+        if (isLocationHardcoded()) {
+            return getCacheLocation();
+        }
+
         if (mLocation != null) {
             return mLocation;
         } else {
@@ -142,8 +152,8 @@ public class LocationHelper {
             if (latitude != 0 && longitude != 0) {
                 SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(mCtx);
                 pref.edit()
-                        .putFloat(mCtx.getString(R.string.settings_key_cached_latitude), (float) latitude)
-                        .putFloat(mCtx.getString(R.string.settings_key_cached_longitude), (float)longitude)
+                        .putString(mCtx.getString(R.string.settings_key_cached_latitude), latitude + "")
+                        .putString(mCtx.getString(R.string.settings_key_cached_longitude), longitude + "")
                         .apply();
             }
         }
@@ -151,17 +161,20 @@ public class LocationHelper {
 
     public Location getCacheLocation() {
         SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(mCtx);
-        float latitude = pref.getFloat(mCtx.getString(R.string.settings_key_cached_latitude), 0);
-        float longitude = pref.getFloat(mCtx.getString(R.string.settings_key_cached_longitude), 0);
+        String latitudeStr = pref.getString(mCtx.getString(R.string.settings_key_cached_latitude), null);
+        String longitudeStr = pref.getString(mCtx.getString(R.string.settings_key_cached_longitude), null);
 
-        if (latitude == 0 && longitude == 0) {
+        if (latitudeStr == null && longitudeStr == null) {
             return null;
         } else {
             Location location = new Location("");
-            location.setLatitude(latitude);
-            location.setLongitude(longitude);
+            location.setLatitude(  latitudeStr != null ? Float.parseFloat(latitudeStr)  : 0);
+            location.setLongitude(longitudeStr != null ? Float.parseFloat(longitudeStr) : 0);
             return location;
         }
     }
 
+    public boolean isLocationHardcoded() {
+        return LazyPref.getBool(mCtx, R.string.setting_light_location_hardcode_location_key);
+    }
 }
