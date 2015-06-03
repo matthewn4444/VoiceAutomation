@@ -47,6 +47,10 @@ public class LocationHelper {
         mAskToEnableLocation = false;
     }
 
+    public static boolean isLocationHardcoded(Context context) {
+        return LazyPref.getBool(context, R.string.setting_light_location_hardcode_location_key);
+    }
+
     public boolean hasLocationEnabled() {
         return mManager.isProviderEnabled(mProvider);
     }
@@ -58,7 +62,7 @@ public class LocationHelper {
 
     public void queryLocation(final OnLocationFoundListener listener) {
         // User selected to hardcode location, so we send back that data
-        if (isLocationHardcoded()) {
+        if (isLocationHardcoded(mCtx)) {
             listener.onLocationFound(getCacheLocation());
             return;
         }
@@ -128,7 +132,7 @@ public class LocationHelper {
     }
 
     public Location getLastLocation() {
-        if (isLocationHardcoded()) {
+        if (isLocationHardcoded(mCtx)) {
             return getCacheLocation();
         }
 
@@ -172,9 +176,5 @@ public class LocationHelper {
             location.setLongitude(longitudeStr != null ? Float.parseFloat(longitudeStr) : 0);
             return location;
         }
-    }
-
-    public boolean isLocationHardcoded() {
-        return LazyPref.getBool(mCtx, R.string.setting_light_location_hardcode_location_key);
     }
 }

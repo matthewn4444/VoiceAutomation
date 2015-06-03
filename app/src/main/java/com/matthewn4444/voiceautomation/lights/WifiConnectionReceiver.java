@@ -4,24 +4,18 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import android.util.Log;
 
-import com.matthewn4444.voiceautomation.LocationHelper;
 import com.matthewn4444.voiceautomation.R;
 
 import java.util.Calendar;
 
 public class WifiConnectionReceiver extends BroadcastReceiver {
-    public static final String TAG = "WifiConnectionReceiver";
-
-    private static final int DelayActionMill = 1000;    // Delayed actions for some moments
-    private static final String UnknownSSID = "<unknown ssid>";
+    private static final int LightsDisconnectTimeout = 8000;    // Disconnect 8 sec after connected
     private SharedPreferences mPref;
     private String mLastDisconnectionSettingsKey;
 
@@ -61,54 +55,6 @@ public class WifiConnectionReceiver extends BroadcastReceiver {
         }
     }
 
-    private void locationReadyAndConnected(final Context context, final Location location) {
-        final LightsSpeechCategory.ILightController controller = new LFXController(context);
-        if (controller.isAvailable()) {
-            locationLightsReadyAndConnected(context, location, controller);
-        } else {
-            controller.setOnConnectionChangedListener(new LightsSpeechCategory.ILightController.OnConnectionChangedListener() {
-                @Override
-                public void onConnectionChanged(int lightsConnected, boolean justConnected) {
-                    if (justConnected) {
-                        // Now that location, lights and wifi is connected, we can turn the lights on
-                        // If unavailable then try again 1 sec later, then give up if fails again
-                        if (!controller.isAvailable()) {
-                            Log.w(TAG, "Light controller is not ready to show lights yet, wait another " + DelayActionMill + " ms.");
-                            new Handler().postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (controller.isAvailable()) {
-                                        locationLightsReadyAndConnected(context, location, controller);
-                                    } else {
-                                        Log.w(TAG, "Light controller is not ready for the second time for automation, give up.");
-                                        controller.disconnect();
-                                    }
-                                }
-                            }, DelayActionMill);
-                        } else {
-                            locationLightsReadyAndConnected(context, location, controller);
-                        }
-                    }
-                }
-            });
-            controller.connect();
-        }
-    }
-
-    private void locationLightsReadyAndConnected(final Context context, Location location,
-                                                 final LightsSpeechCategory.ILightController controller) {
-        // Automate the lights
-        new LightsAutomator(context, location, controller);
-
-        // Safe way to make sure that the lights are adjusted correctly due to network latency
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                controller.disconnect();
-            }
-        }, DelayActionMill * 4);
-    }
-
     private void onConnection(final Context context, Intent intent) {
         if (LightsAutomator.isAutomationAllowedBySSID(context)) {
             // Once the wifi was off for more than 10 min and then connected, we can start getting
@@ -124,23 +70,16 @@ public class WifiConnectionReceiver extends BroadcastReceiver {
                     return;
                 }
 
-                LocationHelper locationHelper = new LocationHelper(context);
-                if (locationHelper.hasLocationEnabled()) {
-                    locationHelper.queryLocation(new LocationHelper.OnLocationFoundListener() {
-                        @Override
-                        public void onLocationFound(Location location) {
-                            locationReadyAndConnected(context, location);
-                        }
-                    });
-                } else {
-                    // Get the last saved location :(
-                    Location location = locationHelper.getCacheLocation();
-                    if (location != null) {
-                        locationReadyAndConnected(context, location);
-                    } else {
-                        Log.w(TAG, "Connected to wifi but unable to set lights because no location is available.");
+                // Automate the lights on startup
+                final LightsAutomator automator = new LightsAutomator(context, true);
+
+                // Safe way to make sure that the lights are adjusted correctly due to network latency
+                new Handler().postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        automator.getLightController().disconnect();
                     }
-                }
+                }, LightsDisconnectTimeout);
             }
         }
     }

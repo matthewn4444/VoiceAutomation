@@ -1,22 +1,18 @@
 package com.matthewn4444.voiceautomation;
 
 import android.content.Intent;
-import android.location.Location;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Toast;
 
-import com.matthewn4444.voiceautomation.lights.LFXController;
 import com.matthewn4444.voiceautomation.lights.LightsAutomator;
 import com.matthewn4444.voiceautomation.lights.LightsSpeechCategory;
 import com.matthewn4444.voiceautomation.settings.Settings;
 
 
 public class ListeningActivity extends AppCompatActivity implements
-        View.OnClickListener,
-        LocationHelper.OnLocationFoundListener {
+        View.OnClickListener {
     private static final int REQUEST_CODE_SETTINGS = 1;
     private static final int SettingsButtonId = R.id.settings_button;
 
@@ -24,12 +20,7 @@ public class ListeningActivity extends AppCompatActivity implements
     private SpeechCategory[] mCategories;
     private SpeechController mController;
     private LightsAutomator mLightAutomator;
-    private LocationHelper mLocationHelper;
-    private LightsSpeechCategory.ILightController mLightController;
     private int mSettingsLastSunsetSteps;
-
-    private boolean mLocationIsReady = false;
-    private boolean mLightsIsReady = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,19 +30,16 @@ public class ListeningActivity extends AppCompatActivity implements
 
         findViewById(SettingsButtonId).setOnClickListener(this);
 
-        setupLightController();
+        mLightAutomator = new LightsAutomator(this);
         mPresenter = new UIPresenter(this);
         setupSpeechController();
-
-        mLocationHelper = new LocationHelper(this);
-        mLocationHelper.queryLocation(this);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        mLocationHelper.onPause();
         mController.pause();
+        mLightAutomator.onPause();
         mPresenter.immediatelyHideCategory();
         for (SpeechCategory cate: mCategories) {
             cate.pause();
@@ -61,7 +49,7 @@ public class ListeningActivity extends AppCompatActivity implements
     @Override
     protected void onResume() {
         super.onResume();
-        mLocationHelper.onResume();
+        mLightAutomator.onResume();
         mController.resume();
         for (SpeechCategory cate: mCategories) {
             cate.resume();
@@ -110,8 +98,8 @@ public class ListeningActivity extends AppCompatActivity implements
 
             // If location was not available before because was not on and then went to settings to
             // hardcode the location, then we should try again with new location
-            if (!mLocationIsReady && mLocationHelper.isLocationHardcoded() && mLightAutomator == null) {
-                mLocationHelper.queryLocation(this);
+            if (!mLightAutomator.isLocationReady() && LocationHelper.isLocationHardcoded(this)) {
+                mLightAutomator.retryLocation();
             }
 
             if (speechControllerNeedsReset) {
@@ -124,48 +112,9 @@ public class ListeningActivity extends AppCompatActivity implements
 
     private void setupSpeechController() {
         mCategories = new SpeechCategory[]{
-                new LightsSpeechCategory(this, mPresenter, mLightController)
+                new LightsSpeechCategory(this, mPresenter, mLightAutomator.getLightController())
         };
         mController = new SpeechController(this, mCategories);
         mController.setSpeechListener(mPresenter);
-    }
-
-    private void setupLightController() {
-        mLightController = new LFXController(this);
-        if (!mLightController.isAvailable()) {
-            mLightController.setOnConnectionChangedListener(
-                    new LightsSpeechCategory.ILightController.OnConnectionChangedListener() {
-                @Override
-                public void onConnectionChanged(int lightsConnected, boolean justConnected) {
-                    if (!mLightsIsReady && justConnected && mLightController.isAvailable()) {
-                        // Initial connection with the lights have been made, now we can automate them
-                        mLightsIsReady = true;
-                        startLightAutomation();
-                    }
-                }
-            });
-            mLightController.connect();
-        } else {
-            mLightsIsReady = true;
-            startLightAutomation();
-        }
-    }
-
-    private void startLightAutomation() {
-        if (mLightsIsReady && mLocationIsReady) {
-            mLightAutomator = new LightsAutomator(ListeningActivity.this,
-                    mLocationHelper.getLastLocation(), mLightController);
-        }
-    }
-
-    @Override
-    public void onLocationFound(Location location) {
-        if (location != null) {
-            mLocationHelper.cacheLocation();
-            mLocationIsReady = true;
-            startLightAutomation();
-        } else {
-            Toast.makeText(this, R.string.location_is_unavailable, Toast.LENGTH_SHORT).show();
-        }
     }
 }

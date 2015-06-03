@@ -12,11 +12,12 @@ import android.util.Log;
 
 import com.luckycatlabs.sunrisesunset.SunriseSunsetCalculator;
 import com.matthewn4444.voiceautomation.LazyPref;
+import com.matthewn4444.voiceautomation.LocationHelper;
 import com.matthewn4444.voiceautomation.R;
 
 import java.util.Calendar;
 
-public class LightsAutomator {
+public class LightsAutomator implements LocationHelper.OnLocationFoundListener {
     public static final String TAG = "LightsAutomator";
     public static final String ExtraStartTime = "intent.extra.start.time";
     public static final String ExtraIntervalSec = "intent.extra.interval.sec";
@@ -24,16 +25,65 @@ public class LightsAutomator {
     private static final int ResKeyLastLightInteraction = R.string.settings_key_last_light_user_interaction;
 
     private final Context mCtx;
-    private final LightsSpeechCategory.ILightController mController;
-    private final Location mLocation;
+    private final LocationHelper mLocationHelper;
+
+    private boolean mLightsIsReady;
+    private Location mLocation;
     private SunriseSunsetCalculator mCalculator;
+    private LightsSpeechCategory.ILightController mController;
 
-    public LightsAutomator(Context ctx, Location location, LightsSpeechCategory.ILightController controller) {
+    public LightsAutomator(Context ctx) {
+        this(ctx, false);
+    }
+
+    public LightsAutomator(Context ctx, boolean silent) {
         mCtx = ctx;
-        mLocation = location;
-        mController = controller;
 
-        init();
+        // Setup the light controller
+        mController = new LFXController(ctx);
+        if (!mController.isAvailable()) {
+            mController.setOnConnectionChangedListener(
+                    new LightsSpeechCategory.ILightController.OnConnectionChangedListener() {
+                        @Override
+                        public void onConnectionChanged(int lightsConnected, boolean justConnected) {
+                            if (!mLightsIsReady && justConnected && mController.isAvailable()) {
+                                // Initial connection with the lights have been made, now we can automate them
+                                mLightsIsReady = true;
+                                init();
+                            }
+                        }
+                    });
+            mController.connect();
+        } else {
+            mLightsIsReady = true;
+            init();
+        }
+
+        // Setup location
+        mLocationHelper = new LocationHelper(ctx);
+        if (mLocationHelper.hasLocationEnabled() || !silent) {
+            mLocationHelper.queryLocation(this);
+        } else {
+            // Get the last saved location if silent
+            Location location = mLocationHelper.getCacheLocation();
+            if (location != null) {
+                mLocation = location;
+                init();
+            } else {
+                Log.w(TAG, "Connected to wifi but unable to set lights because no location is available.");
+            }
+        }
+    }
+
+    @Override
+    public void onLocationFound(Location location) {
+        if (location != null) {
+            mLocationHelper.cacheLocation();
+            mLocation = location;
+            init();
+        } else {
+            Log.v(TAG, mCtx.getString(R.string.location_is_unavailable));
+        }
     }
 
     static void cancelAutomator(Context ctx) {
@@ -160,12 +210,41 @@ public class LightsAutomator {
 
     public void reschedule() {
         cancelAutomator(mCtx);
-        if (isSunsetAutomationEnabled(mCtx)) {
+        if (mLocation != null && isSunsetAutomationEnabled(mCtx)) {
             scheduleSunsetGradualLightsOn(mCtx, mLocation);
         }
     }
 
+    public LightsSpeechCategory.ILightController getLightController() {
+        return mController;
+    }
+
+    public void retryLocation() {
+        mLocationHelper.queryLocation(this);
+    }
+
+    public boolean isLocationReady() {
+        return mLocation != null;
+    }
+
+    public boolean isLightsIsReady() {
+        return mLightsIsReady;
+    }
+
+    public void onPause() {
+        mLocationHelper.onPause();
+    }
+
+    public void onResume() {
+        mLocationHelper.onResume();
+    }
+
+
     private void init() {
+        if (!mLightsIsReady || mLocation == null) {
+            return;
+        }
+
         Calendar now = Calendar.getInstance();
         mCalculator = new SunriseSunsetCalculator(new com.luckycatlabs.sunrisesunset.dto.Location(
                 mLocation.getLatitude(), mLocation.getLongitude()), now.getTimeZone());
