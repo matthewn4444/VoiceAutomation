@@ -10,6 +10,9 @@ import com.matthewn4444.voiceautomation.lights.LightsAutomator;
 import com.matthewn4444.voiceautomation.lights.LightsSpeechCategory;
 import com.matthewn4444.voiceautomation.settings.Settings;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class ListeningActivity extends AppCompatActivity implements
         View.OnClickListener {
@@ -17,9 +20,12 @@ public class ListeningActivity extends AppCompatActivity implements
     private static final int SettingsButtonId = R.id.settings_button;
 
     private UIPresenter mPresenter;
-    private SpeechCategory[] mCategories;
+    private List<SpeechCategory> mCategories = new ArrayList<>();
     private SpeechController mController;
     private LightsAutomator mLightAutomator;
+
+    // Track settings so we know what changed
+    private boolean mEnableLights;
     private int mSettingsLastSunsetSteps;
 
     @Override
@@ -30,26 +36,34 @@ public class ListeningActivity extends AppCompatActivity implements
 
         findViewById(SettingsButtonId).setOnClickListener(this);
 
-        mLightAutomator = new LightsAutomator(this);
+        mEnableLights = LightsSpeechCategory.areLightsEnabled(this);
+        if (mEnableLights) {
+            mLightAutomator = new LightsAutomator(this);
+        }
+
         mPresenter = new UIPresenter(this);
         setupSpeechController();
     }
 
     @Override
     protected void onPause() {
-        super.onPause();
         mController.pause();
-        mLightAutomator.onPause();
+        if (mLightAutomator != null) {
+            mLightAutomator.onPause();
+        }
         mPresenter.immediatelyHideCategory();
         for (SpeechCategory cate: mCategories) {
             cate.pause();
         }
+        super.onPause();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        mLightAutomator.onResume();
+        if (mLightAutomator != null) {
+            mLightAutomator.onResume();
+        }
         mController.resume();
         for (SpeechCategory cate: mCategories) {
             cate.resume();
@@ -88,18 +102,37 @@ public class ListeningActivity extends AppCompatActivity implements
                 }
             }
 
-            // Check for changes in Sunset Automation Steps, then we need to reset the scheduling
-            int newSunsetSteps = LazyPref.getIntDefaultRes(this,
-                    R.string.setting_light_auto_sunset_automation_step_key,
-                    R.integer.settings_default_sunset_automation_step);
-            if (newSunsetSteps != mSettingsLastSunsetSteps) {
-                mLightAutomator.reschedule();
+            // Check if user has enabled/disabled lights
+            boolean newEnableLights = LightsSpeechCategory.areLightsEnabled(this);
+            if (newEnableLights != mEnableLights) {
+                if (newEnableLights) {
+                    // Just enabled the lights
+                    mLightAutomator = new LightsAutomator(this);
+                } else {
+                    // Just disabled the lights
+                    LightsAutomator.cancelAutomator(this);
+                    mLightAutomator.getLightController().disconnect();
+                    mLightAutomator.onPause();
+                    mLightAutomator = null;
+                }
+                speechControllerNeedsReset = true;
+                mEnableLights = newEnableLights;
             }
 
-            // If location was not available before because was not on and then went to settings to
-            // hardcode the location, then we should try again with new location
-            if (!mLightAutomator.isLocationReady() && LocationHelper.isLocationHardcoded(this)) {
-                mLightAutomator.retryLocation();
+            if (mLightAutomator != null) {
+                // Check for changes in Sunset Automation Steps, then we need to reset the scheduling
+                int newSunsetSteps = LazyPref.getIntDefaultRes(this,
+                        R.string.setting_light_auto_sunset_automation_step_key,
+                        R.integer.settings_default_sunset_automation_step);
+                if (newSunsetSteps != mSettingsLastSunsetSteps) {
+                    mLightAutomator.reschedule();
+                }
+
+                // If location was not available before because was not on and then went to settings to
+                // hardcode the location, then we should try again with new location
+                if (!mLightAutomator.isLocationReady() && LocationHelper.isLocationHardcoded(this)) {
+                    mLightAutomator.retryLocation();
+                }
             }
 
             if (speechControllerNeedsReset) {
@@ -111,9 +144,10 @@ public class ListeningActivity extends AppCompatActivity implements
     }
 
     private void setupSpeechController() {
-        mCategories = new SpeechCategory[]{
-                new LightsSpeechCategory(this, mPresenter, mLightAutomator.getLightController())
-        };
+        mCategories.clear();
+        if (mLightAutomator != null) {
+            mCategories.add(new LightsSpeechCategory(this, mPresenter, mLightAutomator.getLightController()));
+        }
         mController = new SpeechController(this, mCategories);
         mController.setSpeechListener(mPresenter);
     }

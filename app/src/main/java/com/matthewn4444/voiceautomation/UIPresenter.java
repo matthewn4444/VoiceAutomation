@@ -190,10 +190,9 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
     public void immediatelyHideCategory() {
         mCurrentBackgroundColor = Color.BLACK;
         mCurrentCaptionColor = Color.WHITE;
-        mCurrentImageOpacity = 1.0f;
+        mCurrentImageOpacity = 0.0f;
 
         mCategoryImageIsShowing = false;
-        mMainImage.setVisibility(View.GONE);
         mMainBackImage.setVisibility(View.GONE);
         mMainImageHolder.setVisibility(View.GONE);
 

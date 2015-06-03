@@ -53,6 +53,10 @@ public class LightsSpeechCategory extends SpeechCategory {
         mPref = PreferenceManager.getDefaultSharedPreferences(ctx);
     }
 
+    public static boolean areLightsEnabled(Context ctx) {
+        return LazyPref.getBool(ctx, R.string.settings_general_light_enable_lights_key, true);
+    }
+
     @Override
     public int getMainResDrawable() {
         return R.drawable.light_bulb_on;

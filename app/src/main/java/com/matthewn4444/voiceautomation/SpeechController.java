@@ -13,6 +13,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -35,7 +36,7 @@ public class SpeechController implements RecognitionListener {
         DEFAULT, PHONETIC, LANGUAGE
     };
 
-    private final SpeechCategory[] mCategories;
+    private final List<SpeechCategory> mCategories;
     private final Context mCtx;
     private final HashMap<String, SpeechCategory> mLookup;
 
@@ -78,7 +79,7 @@ public class SpeechController implements RecognitionListener {
         public void onCategoryUnavailable(SpeechCategory category);
     }
 
-    public SpeechController(Context ctx, SpeechCategory[] categories) {
+    public SpeechController(Context ctx, List<SpeechCategory> categories) {
         mCtx = ctx;
         mCategories = categories;
         mLookup = new HashMap<>();
@@ -291,7 +292,7 @@ public class SpeechController implements RecognitionListener {
     public void pause() {
         mPaused = true;
         Log.v(TAG, "Pause speech recognition");
-        endTimeout();
+        endSpeech();
         if (mRecognizer != null) {
             mRecognizer.stop();
         }

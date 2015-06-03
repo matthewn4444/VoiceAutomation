@@ -86,7 +86,7 @@ public class LightsAutomator implements LocationHelper.OnLocationFoundListener {
         }
     }
 
-    static void cancelAutomator(Context ctx) {
+    static public void cancelAutomator(Context ctx) {
         AlarmManager alarmMgr = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
         PendingIntent in = (PendingIntent.getBroadcast(ctx, 0,
                 new Intent(ctx, LightsAutomatorReceiver.class),

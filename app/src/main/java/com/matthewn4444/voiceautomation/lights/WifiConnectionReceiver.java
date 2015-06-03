@@ -24,6 +24,10 @@ public class WifiConnectionReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        if (!LightsSpeechCategory.areLightsEnabled(context)) {
+            return;
+        }
+
         mPref = PreferenceManager.getDefaultSharedPreferences(context);
         mLastDisconnectionSettingsKey = context.getString(R.string.settings_key_last_wifi_time_disconnection);
 

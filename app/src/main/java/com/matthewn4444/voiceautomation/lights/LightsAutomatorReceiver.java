@@ -21,7 +21,8 @@ public class LightsAutomatorReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(final Context context, Intent intent) {
         // Since the preference is not enabled, we should cancel and not automate the lights
-        if (!LightsAutomator.isSunsetAutomationEnabled(context)) {
+        if (!LightsAutomator.isSunsetAutomationEnabled(context)
+                || !LightsSpeechCategory.areLightsEnabled(context)) {
             LightsAutomator.cancelAutomator(context);
             return;
         }
