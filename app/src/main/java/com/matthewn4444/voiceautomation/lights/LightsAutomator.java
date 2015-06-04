@@ -328,7 +328,10 @@ public class LightsAutomator implements LocationHelper.OnLocationFoundListener {
     }
 
     private Calendar calculateSunsetTime() {
-        return mCalculator.getOfficialSunsetCalendarForDate(Calendar.getInstance());
+        Calendar night = calculateNightTime();
+        Calendar sunset = mCalculator.getOfficialSunsetCalendarForDate(Calendar.getInstance());
+        sunset.add(Calendar.MILLISECOND, -(int)(night.getTimeInMillis() - sunset.getTimeInMillis()));
+        return sunset;
     }
 
     private Calendar calculateNightTime() {
