@@ -172,12 +172,19 @@ public class LightsAutomator implements LocationHelper.OnLocationFoundListener {
         }
 
         Calendar now = Calendar.getInstance();
+
         Calendar lastLightInteraction = Calendar.getInstance();
         long then = LazyPref.getLong(context, ResKeyLastLightInteraction);
         if (then == 0) {
             return true;
         }
+
+        // Set back the last interaction with late night's hours and minutes to not include the early morning as the current day
+        Calendar lateNightTime = getLateNightTime(context);
         lastLightInteraction.setTimeInMillis(then);
+        lastLightInteraction.add(Calendar.MINUTE, -lateNightTime.get(Calendar.MINUTE));
+        lastLightInteraction.add(Calendar.HOUR_OF_DAY, -lateNightTime.get(Calendar.HOUR_OF_DAY));
+
         boolean isEnabled = lastLightInteraction.get(Calendar.YEAR) != now.get(Calendar.YEAR)
                 ||  lastLightInteraction.get(Calendar.MONTH) != now.get(Calendar.MONTH)
                 || lastLightInteraction.get(Calendar.DAY_OF_MONTH) != now.get(Calendar.DAY_OF_MONTH);
@@ -279,7 +286,7 @@ public class LightsAutomator implements LocationHelper.OnLocationFoundListener {
         Calendar now = Calendar.getInstance();
         Calendar sunset = calculateSunsetTime();
         Calendar night = calculateNightTime();
-        Calendar lateNightTime = getLateNightTime();
+        Calendar lateNightTime = getLateNightTime(mCtx);
 
         if (now.after(night) || now.before(lateNightTime)) {
             // It is after the night time or before the late night set in settings, so max brightness
@@ -295,13 +302,13 @@ public class LightsAutomator implements LocationHelper.OnLocationFoundListener {
         }
     }
 
-    private Calendar getLateNightTime() {
+    static private Calendar getLateNightTime(Context context) {
         Calendar ret = Calendar.getInstance();
         Calendar then = Calendar.getInstance();
-        long timeMill = LazyPref.getLong(mCtx, R.string.settings_light_auto_night_time_key);
+        long timeMill = LazyPref.getLong(context, R.string.settings_light_auto_night_time_key);
         if (timeMill == 0) {
             // Set default time
-            ret.set(Calendar.HOUR_OF_DAY, mCtx.getResources().getInteger(R.integer.settings_default_last_night_hour));
+            ret.set(Calendar.HOUR_OF_DAY, context.getResources().getInteger(R.integer.settings_default_last_night_hour));
             ret.set(Calendar.MINUTE, 0);
         } else {
             then.setTimeInMillis(timeMill);
