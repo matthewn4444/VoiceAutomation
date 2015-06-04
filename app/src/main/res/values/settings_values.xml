@@ -7,6 +7,7 @@
     <integer name="settings_default_last_night_hour">3</integer>
     <integer name="settings_default_sunset_automation_step">10</integer>
     <integer name="settings_default_sunset_automation_step_duration_sec">3</integer>
+    <integer name="settings_default_reset_automation_idle_time">2</integer>
     <string name="settings_default_activation_command_lights">lights</string>
 
     <!-- Settings and Keys -->
@@ -69,6 +70,10 @@
     <string name="setting_light_auto_even_user_interacts_title">Automate Regardless of Input</string>
     <string name="setting_light_auto_even_user_interacts_key">settings.key.light.auto.even.user.interacts</string>
     <string name="setting_light_auto_even_user_interacts_summary">If a user changes the lights using this app, automation is disabled until the next day. This ignores that and always enables light automation.</string>
+
+    <string name="setting_light_auto_reset_auto_time_title">Restart Automation Idle Time (hrs)</string>
+    <string name="setting_light_auto_reset_auto_time_key">settings.key.light.auto.reset.auto.time</string>
+    <string name="setting_light_auto_reset_auto_time_summary">Set the idle time in hours to re-enable light automation after user changes the lights.</string>
 
     <string name="setting_light_auto_lock_to_network_title">Restrict Automation to SSID</string>
     <string name="setting_light_auto_lock_to_network_key">settings.key.light.auto.lock.to.network</string>

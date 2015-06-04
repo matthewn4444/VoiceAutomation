@@ -53,7 +53,16 @@
         <CheckBoxPreference
             android:title="@string/setting_light_auto_even_user_interacts_title"
             android:key="@string/setting_light_auto_even_user_interacts_key"
+            android:disableDependentsState="true"
             android:summary="@string/setting_light_auto_even_user_interacts_summary"/>
+        <com.matthewn4444.voiceautomation.settings.preferences.NumberPickerPreference
+            android:title="@string/setting_light_auto_reset_auto_time_title"
+            android:key="@string/setting_light_auto_reset_auto_time_key"
+            android:summary="@string/setting_light_auto_reset_auto_time_summary"
+            android:dependency="@string/setting_light_auto_even_user_interacts_key"
+            android:defaultValue="@integer/settings_default_reset_automation_idle_time"
+            app:min="1"
+            app:max="5"/>
 
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/settings_light_auto_cate_properties_title">
