@@ -15,24 +15,18 @@ public abstract class SpeechCategory {
     private final SpeechModel mModel;
     private final String mMessage;
     private final String mAssetsGrammerFile;
-    private final ICategoryPresenter mPresenter;
+    private final CategoryPresenter mPresenter;
     private final String mSettingsActivationKey;
     private final String mSettingsDefaultCommand;
 
     private String mActivationPhrase;
 
-    public static interface ICategoryPresenter {
-        public void animateBackgroundColor(int to);
-        public void animateCaptionColor(int to);
-        public void animateMainImageOpacity(float to);
-    }
-
-    public SpeechCategory(Context context, ICategoryPresenter presenter, String defaultActivationCommand,
+    public SpeechCategory(Context context, CategoryPresenter presenter, String defaultActivationCommand,
                           String settingsActivationKey, String assetsGrammerFile, SpeechModel model, String message) {
         this(context, presenter, defaultActivationCommand, settingsActivationKey, assetsGrammerFile, model, message, DefaultThreshold);
     }
 
-    public SpeechCategory(Context context, ICategoryPresenter presenter, String defaultActivationCommand,
+    public SpeechCategory(Context context, CategoryPresenter presenter, String defaultActivationCommand,
                           String settingsActivationKey, String assetsGrammerFile, SpeechModel model, String message, String threshold) {
         mCtx = context;
         mSettingsActivationKey = settingsActivationKey;
@@ -50,21 +44,15 @@ public abstract class SpeechCategory {
 
     public abstract boolean isAvailable();
 
-    public abstract int getMainResDrawable();
-
-    public abstract int getBackResDrawable();
-
-    public abstract float getMainImageOpacity();
-
-    public abstract int getMainColor();
-
-    public abstract int getMainTextColor();
-
     public boolean updateAndHasActivationCommand() {
         String oldCommand = getActivationCommand();
         updateActivationCommandFromSettings();
         String newCommand = getActivationCommand();
         return !oldCommand.equals(newCommand);
+    }
+
+    public CategoryPresenter getPresenter() {
+        return mPresenter;
     }
 
     public String getGrammerFileName() {
@@ -93,10 +81,6 @@ public abstract class SpeechCategory {
 
     public String getActivationCommand() {
         return mActivationPhrase;
-    }
-
-    protected ICategoryPresenter getPresenter() {
-        return mPresenter;
     }
 
     protected Context getContext() {

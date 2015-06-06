@@ -9,6 +9,7 @@
     <string name="prompt_setup">Preparing speech recognition</string>
     <string name="prompt_ready">Ready for commands</string>
     <string name="prompt_adjust_lights">Adjust lights with a percentage or turn on/off</string>
+    <string name="prompt_control_music">Say a music command to control your music</string>
     <string name="prompt_locked">Speech is locked\nSay \'start listening\' to unlock</string>
 
     <!-- Commands -->
@@ -19,6 +20,7 @@
 
     <!-- Speech assets file names -->
     <string name="assets_lights_grammer_filename">lights.gram</string>
+    <string name="assets_music_grammer_filename">music.gram</string>
 
     <!-- Activity name -->
     <string name="activity_settings_title">Settings</string>

@@ -8,6 +8,7 @@ import android.view.WindowManager;
 
 import com.matthewn4444.voiceautomation.lights.LightsAutomator;
 import com.matthewn4444.voiceautomation.lights.LightsSpeechCategory;
+import com.matthewn4444.voiceautomation.music.MusicSpeechCategory;
 import com.matthewn4444.voiceautomation.settings.Settings;
 
 import java.util.ArrayList;
@@ -146,8 +147,9 @@ public class ListeningActivity extends AppCompatActivity implements
     private void setupSpeechController() {
         mCategories.clear();
         if (mLightAutomator != null) {
-            mCategories.add(new LightsSpeechCategory(this, mPresenter, mLightAutomator.getLightController()));
+            mCategories.add(new LightsSpeechCategory(this, mLightAutomator.getLightController()));
         }
+        mCategories.add(new MusicSpeechCategory(this));
         mController = new SpeechController(this, mCategories);
         mController.setSpeechListener(mPresenter);
     }

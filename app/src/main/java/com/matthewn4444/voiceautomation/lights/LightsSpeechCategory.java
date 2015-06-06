@@ -1,9 +1,6 @@
 package com.matthewn4444.voiceautomation.lights;
 
 import android.content.Context;
-import android.content.SharedPreferences;
-import android.graphics.Color;
-import android.preference.PreferenceManager;
 import android.widget.Toast;
 
 import com.matthewn4444.voiceautomation.LazyPref;
@@ -14,10 +11,6 @@ import com.matthewn4444.voiceautomation.SpeechController.SpeechModel;
 import java.security.InvalidParameterException;
 
 public class LightsSpeechCategory extends SpeechCategory {
-    private static final int ON_COLOR = Color.YELLOW;
-    private static final int OFF_COLOR = Color.GRAY;
-
-    private final SharedPreferences mPref;
     private final ILightController mLightController;
 
     // Commands
@@ -43,45 +36,25 @@ public class LightsSpeechCategory extends SpeechCategory {
         public void setOnConnectionChangedListener(OnConnectionChangedListener listener);
     }
 
-    public LightsSpeechCategory(Context ctx, ICategoryPresenter presenter, ILightController controller) {
-        super(ctx, presenter, ctx.getString(R.string.settings_default_activation_command_lights),
+    public LightsSpeechCategory(Context ctx, ILightController controller) {
+        super(ctx, new LightsPresenter(ctx), ctx.getString(R.string.settings_default_activation_command_lights),
                 ctx.getString(R.string.settings_general_light_activation_command_key),
                 ctx.getString(R.string.assets_lights_grammer_filename),
                 SpeechModel.DEFAULT,
                 ctx.getString(R.string.prompt_adjust_lights));
         mLightController = controller;
-        mPref = PreferenceManager.getDefaultSharedPreferences(ctx);
     }
 
     public static boolean areLightsEnabled(Context ctx) {
         return LazyPref.getBool(ctx, R.string.settings_general_light_enable_lights_key, true);
     }
 
-    @Override
-    public int getMainResDrawable() {
-        return R.drawable.light_bulb_on;
+    public int getBrightness() {
+        return mLightController.getBrightnessPercentage();
     }
 
-    @Override
-    public int getBackResDrawable() {
-        return R.drawable.light_bulb_off;
-    }
-
-    @Override
-    public float getMainImageOpacity() {
-        return mLightController.isOn() ? mLightController.getBrightnessPercentage() / 100.0f : 0.0f;
-    }
-
-    @Override
-    public int getMainColor() {
-        return blendColors(ON_COLOR, OFF_COLOR, getMainImageOpacity());
-    }
-
-    @Override
-    public int getMainTextColor() {
-        return blendColors(getContext().getResources().getColor(R.color.lights_on_main_text_color),
-                getContext().getResources().getColor(R.color.lights_off_main_text_color),
-                getMainImageOpacity());
+    public boolean isOn() {
+        return mLightController.isOn();
     }
 
     @Override
@@ -119,7 +92,8 @@ public class LightsSpeechCategory extends SpeechCategory {
                             Toast.LENGTH_SHORT).show();
                     return;
                 }
-                updateColorForPresenter();
+                ((LightsPresenter)getPresenter()).animateChange(mLightController.getBrightnessPercentage(),
+                        mLightController.isOn());
 
                 // Record the last time the user edited the lights to avoid light automation changes
                 LightsAutomator.disableAutomation(getContext());
@@ -130,13 +104,6 @@ public class LightsSpeechCategory extends SpeechCategory {
     @Override
     public boolean isAvailable() {
         return mLightController.isAvailable();
-    }
-
-    private void updateColorForPresenter() {
-        ICategoryPresenter presenter = getPresenter();
-        presenter.animateBackgroundColor(getMainColor());
-        presenter.animateCaptionColor(getMainTextColor());
-        presenter.animateMainImageOpacity(getMainImageOpacity());
     }
 
     private int getDimBrightenStep() {
@@ -281,13 +248,5 @@ public class LightsSpeechCategory extends SpeechCategory {
             }
         }
         return Math.min(sum, 100);
-    }
-
-    private static int blendColors(int color1, int color2, float ratio) {
-        final float inverseRation = 1f - ratio;
-        float r = (Color.red(color1) * ratio) + (Color.red(color2) * inverseRation);
-        float g = (Color.green(color1) * ratio) + (Color.green(color2) * inverseRation);
-        float b = (Color.blue(color1) * ratio) + (Color.blue(color2) * inverseRation);
-        return Color.rgb((int) r, (int) g, (int) b);
     }
 }

@@ -1,0 +1,40 @@
+#JSGF V1.0;
+
+grammar lights;
+
+public <light> =    play |
+                    play music |
+                    play song |
+                    next |
+                    next song |
+                    play next song |
+                    previous |
+                    previous song |
+                    play previous song |
+                    play last song |
+                    pause |
+                    pause music |
+                    pause song |
+                    increase volume |
+                    decrease volume |
+                    volume up |
+                    volume down |
+                    unmute |
+                    mute |
+                    louder |
+                    quieter |
+                    shuffle all |
+                    shuffle all songs |
+                    shuffle on |
+                    enable shuffle |
+                    shuffle off |
+                    disable shuffle |
+                    repeat on |
+                    enable repeat |
+                    repeat off |
+                    disable repeat |
+                    start over |
+                    play again |
+                    play song again |
+                    play this song again;
+ 

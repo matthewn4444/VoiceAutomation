@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
-    <PreferenceCategory android:title="@string/settings_general_light_cate_title">
+    <PreferenceCategory android:title="@string/settings_general_cate_title">
         <!-- Potentially dangerous if user changes activation to random words not in dictionary
         <com.matthewn4444.voiceautomation.settings.preferences.SummaryEditTextPreference-->
             <!--android:title="@string/settings_general_light_activation_command_title"-->

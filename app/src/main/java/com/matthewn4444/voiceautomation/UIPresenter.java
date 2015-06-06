@@ -1,57 +1,52 @@
 package com.matthewn4444.voiceautomation;
 
-import android.animation.ArgbEvaluator;
-import android.animation.ObjectAnimator;
-import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.graphics.Color;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
-import android.widget.ImageView;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class UIPresenter implements SpeechController.SpeechListener, SpeechCategory.ICategoryPresenter {
+public class UIPresenter implements SpeechController.SpeechListener {
     public static final int CATEGORY_IMAGE_TIMEOUT = 5000;
-    public static final int COLOR_ANIMATION_DURATION = 400;
 
     private final Activity mActivity;
 
     private final TextView mCaptionField;
     private final TextView mResultField;
-    private final ImageView mMainImage;
-    private final ImageView mMainBackImage;
-    private final ViewGroup mMainImageHolder;
+    private final ViewGroup mMainCategoryHolder;
+    private final HashMap<SpeechCategory, View> mCategoryViews;
 
     private final Animation mMainImageSlideIn;
     private final Animation mMainImageSlideOut;
     private final Animation mResultTextFadeOut;
+    private final Animation mMainImageFadeIn;
+    private final Animation mMainImageFadeOut;
 
     private SpeechCategory mCurrentCategory;
     private Timer mHideTimer;
     private boolean mCategoryImageIsShowing;
-    private int mCurrentBackgroundColor = Color.BLACK;
-    private int mCurrentCaptionColor = Color.WHITE;
-    private float mCurrentImageOpacity = 1.0f;
 
     public UIPresenter(Activity activity) {
         mActivity = activity;
         mCaptionField = (TextView) activity.findViewById(R.id.caption);
         mResultField = (TextView) activity.findViewById(R.id.result);
-        mMainImageHolder = (ViewGroup) activity.findViewById(R.id.main_image_bolder);
-        mMainImage = (ImageView) activity.findViewById(R.id.main_image_top);
-        mMainBackImage = (ImageView) activity.findViewById(R.id.main_image_bottom);
+        mMainCategoryHolder = (ViewGroup) activity.findViewById(R.id.main_category_holder);
+        mCategoryViews = new HashMap<>();
         speechHasReset();
 
         mMainImageSlideIn = AnimationUtils.loadAnimation(mActivity, R.anim.slide_in_main_image);
         mMainImageSlideOut = AnimationUtils.loadAnimation(mActivity, R.anim.slide_out_main_image);
         mResultTextFadeOut = AnimationUtils.loadAnimation(mActivity, R.anim.result_text_fade_out);
+        mMainImageFadeIn = AnimationUtils.loadAnimation(mActivity, R.anim.fade_in_main_image);
+        mMainImageFadeOut = AnimationUtils.loadAnimation(mActivity, R.anim.fade_out_main_image);
 
         setupAnimations();
     }
@@ -71,12 +66,16 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
             mCaptionField.setText(R.string.prompt_ready);
         } else {
             cancelTimer();
-            mCurrentCategory = category;
             mCaptionField.setText(category.getMessage());
             if (!mCategoryImageIsShowing) {
                 mCategoryImageIsShowing = true;
-                animateCategoryImage(category, true);
+                showCategory(category);
+            } else if (mCurrentCategory != null && mCurrentCategory != category) {
+                // Swap to the new command
+                hideCategory(mCurrentCategory);
+                showCategory(category);
             }
+            mCurrentCategory = category;
         }
     }
 
@@ -104,7 +103,8 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
                         public void run() {
                             cancelTimer();
                             mCategoryImageIsShowing = false;
-                            animateCategoryImage(mCurrentCategory, false);
+                            hideCategory(mCurrentCategory);
+                            mCurrentCategory = null;
                         }
                     });
                 }
@@ -114,9 +114,9 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
             mResultField.setVisibility(View.GONE);
             if (text == null && mCurrentCategory != null) {
                 mCategoryImageIsShowing = false;
-                animateCategoryImage(mCurrentCategory, false);
+                hideCategory(mCurrentCategory);
+                mCurrentCategory = null;
             }
-            mCurrentCategory = null;
         }
     }
 
@@ -126,7 +126,7 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
         if (isLocked) {
             mCaptionField.setText(R.string.prompt_locked);
             if (mCategoryImageIsShowing) {
-                animateCategoryImage(mCurrentCategory, false);
+                hideCategory(mCurrentCategory);
                 mCategoryImageIsShowing = false;
             }
         }
@@ -138,63 +138,26 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
                 + "' is unavailable", Toast.LENGTH_SHORT).show();
     }
 
-    @Override
-    public void animateBackgroundColor(int to) {
-        ValueAnimator animator = ValueAnimator.ofObject(new ArgbEvaluator(), mCurrentBackgroundColor, to);
-        animator.setInterpolator(new AccelerateInterpolator());
-        animator.setDuration(COLOR_ANIMATION_DURATION);
-        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                mActivity.getWindow().getDecorView().setBackgroundColor(
-                        (int)animation.getAnimatedValue());
-            }
-        });
-        animator.start();
-        mCurrentBackgroundColor = to;
-    }
-
-    @Override
-    public void animateCaptionColor(int to) {
-        ValueAnimator animator = ValueAnimator.ofObject(new ArgbEvaluator(), mCurrentCaptionColor, to);
-        animator.setInterpolator(new AccelerateInterpolator());
-        animator.setDuration(COLOR_ANIMATION_DURATION);
-        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                mCaptionField.setTextColor((int) animation.getAnimatedValue());
-            }
-        });
-        animator.start();
-        mCurrentCaptionColor = to;
-    }
-
-    @Override
-    public void animateMainImageOpacity(float to) {
-        ValueAnimator animator = ObjectAnimator.ofFloat(mCurrentImageOpacity, to);
-        animator.setDuration(COLOR_ANIMATION_DURATION);
-        animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                mMainImage.setAlpha((float)animation.getAnimatedValue());
-            }
-        });
-        animator.start();
-        mCurrentImageOpacity = to;
-    }
-
     public void speechHasReset() {
         mCaptionField.setText(R.string.prompt_setup);
+
+        for (SpeechCategory category : mCategoryViews.keySet()) {
+            View view = mCategoryViews.get(category);
+            ViewGroup layout = (ViewGroup)view.getParent();
+            layout.removeAllViews();
+            category.getPresenter().onDetachView(layout);
+            mMainCategoryHolder.removeView(layout);
+        }
+        mCategoryViews.clear();
     }
 
     public void immediatelyHideCategory() {
-        mCurrentBackgroundColor = Color.BLACK;
-        mCurrentCaptionColor = Color.WHITE;
-        mCurrentImageOpacity = 0.0f;
-
         mCategoryImageIsShowing = false;
-        mMainBackImage.setVisibility(View.GONE);
-        mMainImageHolder.setVisibility(View.GONE);
+
+        // Hide all categories
+        for (SpeechCategory category : mCategoryViews.keySet()) {
+            ((View) mCategoryViews.get(category).getParent()).setAlpha(0f);
+        }
 
         // TODO remove hardcode for color
         mActivity.getWindow().getDecorView().setBackgroundColor(Color.BLACK);
@@ -219,32 +182,66 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
             @Override
             public void onAnimationRepeat(Animation animation) {}
         });
+
+        mMainImageFadeOut.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {}
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                for (int i = 0; i < mMainCategoryHolder.getChildCount(); i++) {
+                    mMainCategoryHolder.getChildAt(i).setAlpha(0f);
+                }
+                if (mCurrentCategory != null) {
+                    ((View)mCategoryViews.get(mCurrentCategory).getParent()).setAlpha(1.0f);
+                }
+            }
+            @Override
+            public void onAnimationRepeat(Animation animation) {}
+        });
     }
 
-    private void animateCategoryImage(SpeechCategory category, boolean show) {
-        if (category == null) {
-            return;
+    private void showCategory(SpeechCategory category) {
+        if (category != null) {
+            View view = mCategoryViews.get(category);
+            FrameLayout layout;
+            if (view == null) {
+                layout = new FrameLayout(mActivity);
+                view = category.getPresenter().onAttachView(layout, mCaptionField, category);
+                mMainCategoryHolder.addView(layout);
+                mCategoryViews.put(category, view);
+            } else {
+                layout = (FrameLayout) view.getParent();
+            }
+
+            // Show the main image
+            layout.setAlpha(1.0f);
+            view.clearAnimation();
+            view.startAnimation(mMainImageSlideIn);
+            layout.clearAnimation();
+            layout.startAnimation(mMainImageFadeIn);
+
+            // Animate the text color back to normal
+            CategoryPresenter presenter = category.getPresenter();
+            CategoryPresenter.animateTextColor(mCaptionField, Color.WHITE, presenter.getTextColor(category));
+            presenter.onShowPresenter(category);
         }
-        mCurrentImageOpacity = category.getMainImageOpacity();
-        mMainImage.setImageResource(category.getMainResDrawable());
-        mMainImage.setAlpha(mCurrentImageOpacity);
-        if (category.getBackResDrawable() != 0) {
-            mMainBackImage.setImageResource(category.getBackResDrawable());
-            mMainBackImage.setVisibility(View.VISIBLE);
-        } else {
-            mMainBackImage.setVisibility(View.GONE);
-        }
-        mMainImageHolder.setVisibility(View.VISIBLE);
-        mMainImageHolder.clearAnimation();
-        mMainImageHolder.startAnimation(show ? mMainImageSlideIn : mMainImageSlideOut);
-        int currentColor = Color.BLACK;
-        int currentTextColor = Color.WHITE;
-        if (show) {
-            animateBackgroundColor(category.getMainColor());
-            animateCaptionColor(category.getMainTextColor());
-        } else {
-            animateBackgroundColor(currentColor);
-            animateCaptionColor(currentTextColor);
+    }
+
+    private void hideCategory(SpeechCategory category) {
+        if (category != null) {
+            View view = mCategoryViews.get(category);
+            FrameLayout layout = (FrameLayout) view.getParent();
+
+            // Hide the main image
+            view.clearAnimation();
+            view.startAnimation(mMainImageSlideOut);
+            layout.clearAnimation();
+            layout.startAnimation(mMainImageFadeOut);
+
+            // Animate the text color back to normal
+            CategoryPresenter presenter = category.getPresenter();
+            CategoryPresenter.animateTextColor(mCaptionField, presenter.getTextColor(category), Color.WHITE);
+            presenter.onHidePresenter(category);
         }
     }
 }

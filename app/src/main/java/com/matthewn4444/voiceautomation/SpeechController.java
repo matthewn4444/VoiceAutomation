@@ -39,6 +39,7 @@ public class SpeechController implements RecognitionListener {
     private final List<SpeechCategory> mCategories;
     private final Context mCtx;
     private final HashMap<String, SpeechCategory> mLookup;
+    private final AudioManager mAudioManager;
 
     private SpeechRecognizer mRecognizer;
     private SpeechListener mListener;
@@ -83,6 +84,7 @@ public class SpeechController implements RecognitionListener {
         mCtx = ctx;
         mCategories = categories;
         mLookup = new HashMap<>();
+        mAudioManager = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
         mIsReady = false;
         mIsLocked = false;
         LOCK_PHRASE = mCtx.getString(R.string.command_default_lock);
@@ -212,6 +214,7 @@ public class SpeechController implements RecognitionListener {
         if (mListener != null) {
             mListener.onSpeechResult(text);
         }
+        mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
     }
 
     private void playSoundEffect(int id) {
@@ -267,6 +270,7 @@ public class SpeechController implements RecognitionListener {
                 mDelay.postDelayed(new Runnable() {
                     @Override
                     public void run() {
+                        mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, true);
                         mRecognizer.startListening(searchName, getSubCommandTimeout());
                         if (mListener != null) {
                             mListener.onBeginSpeechCategory(cate);
@@ -418,14 +422,16 @@ public class SpeechController implements RecognitionListener {
 
     private void endSpeech(final String text, final String newSearch) {
         endTimeout();
-        mRecognizer.cancel();
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-            @Override
-            public void run() {
-                speechFinishedWithResult(text);
-                switchSearch(newSearch);
-            }
-        });
+        if (mRecognizer != null) {
+            mRecognizer.cancel();
+            new Handler(Looper.getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                    speechFinishedWithResult(text);
+                    switchSearch(newSearch);
+                }
+            });
+        }
     }
 
     private void setupSoundEffects() {

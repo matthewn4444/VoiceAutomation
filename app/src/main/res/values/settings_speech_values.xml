@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="settings_default_speech_keyword_timeout_min">3</integer>
+    <integer name="settings_default_speech_noise_timeout_min">10</integer>
+
+    <!-- Speech Settings -->
+    <string name="settings_speech_header_title">Speech</string>
+
+    <string name="settings_speech_timeout_title">Speech Timeout (sec)</string>
+    <string name="settings_speech_timeout_key">settings.key.speech.timeout</string>
+    <string name="settings_speech_timeout_summary">Ends voice input after a couple of seconds if unable to recognize command.</string>
+
+    <string name="settings_speech_noise_timeout_title">Speech Noise Timeout (sec)</string>
+    <string name="settings_speech_noise_timeout_key">settings.key.speech.noise.timeout</string>
+    <string name="settings_speech_noise_timeout_summary">Ends voice input after a couple of seconds when waiting for command with noise in the background.</string>
+</resources>

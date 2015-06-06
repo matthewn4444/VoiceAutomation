@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_default_activation_command_music">music</string>
+
+    <string name="settings_general_music_enable_key">settings.key.general.music.enable</string>
+    <string name="settings_general_music_activation_command_key">settings.key.general.light.activation.command</string>
+</resources>
