@@ -2,6 +2,9 @@
 <resources>
     <string name="settings_default_activation_command_music">music</string>
 
+    <string name="setings_music_controls_state_shuffle">settings.key.music.controls.state.shuffle</string>
+    <string name="setings_music_controls_state_repeat">settings.key.music.controls.state.repeat</string>
+
     <string name="settings_general_music_enable_key">settings.key.general.music.enable</string>
     <string name="settings_general_music_activation_command_key">settings.key.general.light.activation.command</string>
 </resources>

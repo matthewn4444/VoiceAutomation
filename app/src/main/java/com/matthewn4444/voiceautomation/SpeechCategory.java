@@ -83,7 +83,7 @@ public abstract class SpeechCategory {
         return mActivationPhrase;
     }
 
-    protected Context getContext() {
+    public Context getContext() {
         return mCtx;
     }
 

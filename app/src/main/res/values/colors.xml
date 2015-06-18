@@ -4,4 +4,7 @@
     <color name="lights_off_main_text_color">@android:color/white</color>
 
     <color name="music_main_background">#4183D7</color>
+    <color name="music_controls_background_on">#ff9800</color>
+    <color name="music_controls_background_off">#0288d1</color>
+    <color name="music_controls_ripple_off">#039be5</color>
 </resources>

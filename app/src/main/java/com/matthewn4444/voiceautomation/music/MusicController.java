@@ -1,12 +1,16 @@
 package com.matthewn4444.voiceautomation.music;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.AsyncTask;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.util.Log;
+
+import com.matthewn4444.voiceautomation.R;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +33,9 @@ public class MusicController implements MediaPlayer.OnCompletionListener {
     };
 
     private final List<Song> mSongList;
+    private final SharedPreferences mPrefs;
+    private final String mShuffleKey;
+    private final String mRepeatKey;
 
     private MediaPlayer mMediaPlayer;
     private Context mCtx;
@@ -45,10 +52,16 @@ public class MusicController implements MediaPlayer.OnCompletionListener {
     public MusicController(final Context ctx) {
         mCtx = ctx;
         mSongList = new ArrayList<>();
+        mShuffleKey = ctx.getString(R.string.setings_music_controls_state_shuffle);
+        mRepeatKey = ctx.getString(R.string.setings_music_controls_state_repeat);
+        mPrefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+
         mCurrentSongPosition = 0;
         mIsMusicReady = false;
 
-        mIsPlaying = mIsShuffleOn = mIsRepeatOn = mIsMute = false;
+        mIsPlaying = mIsMute = false;
+        mIsShuffleOn = mPrefs.getBoolean(mShuffleKey, false);
+        mIsRepeatOn = mPrefs.getBoolean(mRepeatKey, false);
 
         // Load the music
         new AsyncTask<Void, Void, Boolean>() {
@@ -182,11 +195,17 @@ public class MusicController implements MediaPlayer.OnCompletionListener {
     }
 
     public void setShuffle(boolean on) {
-        mIsShuffleOn = on;
+        if (mIsShuffleOn != on) {
+            mIsShuffleOn = on;
+            mPrefs.edit().putBoolean(mShuffleKey, on).apply();
+        }
     }
 
     public void setRepeat(boolean on) {
-        mIsRepeatOn = on;
+        if (mIsRepeatOn != on) {
+            mIsRepeatOn = on;
+            mPrefs.edit().putBoolean(mRepeatKey, on).apply();
+        }
     }
 
     public boolean isPlaying() {

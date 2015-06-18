@@ -32,7 +32,7 @@ public class MusicSpeechCategory extends SpeechCategory {
                 ctx.getString(R.string.settings_general_music_activation_command_key),
                 ctx.getString(R.string.assets_music_grammer_filename),
                 SpeechController.SpeechModel.DEFAULT,
-                ctx.getString(R.string.prompt_control_music), "1e-12");
+                ctx.getString(R.string.prompt_control_music), "1e-9");
         mController = new MusicController(ctx);
     }
 
@@ -71,12 +71,25 @@ public class MusicSpeechCategory extends SpeechCategory {
                 Toast.makeText(getContext(), "Music Command '" + result + "' is not supported",
                         Toast.LENGTH_SHORT).show();
             }
+            ((MusicPresenter)getPresenter()).updateState(this);
         }
     }
 
     @Override
     public boolean isAvailable() {
         return mController.isAvailable();
+    }
+
+    public boolean isMute() {
+        return mController.isMute();
+    }
+
+    public boolean isRepeatOn() {
+        return mController.isRepeatOn();
+    }
+
+    public boolean isShuffleOn() {
+        return mController.isShuffleOn();
     }
 
     private boolean matchOneOf(String text, String[] listOfWords) {
