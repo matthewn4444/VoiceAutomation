@@ -6,10 +6,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.TextView;
 
 import com.matthewn4444.voiceautomation.CategoryPresenter;
 import com.matthewn4444.voiceautomation.R;
+import com.matthewn4444.voiceautomation.SharedMainUI;
 import com.matthewn4444.voiceautomation.SpeechCategory;
 
 public class LightsPresenter extends CategoryPresenter {
@@ -21,7 +21,7 @@ public class LightsPresenter extends CategoryPresenter {
     private ImageView mBackImage;
     private ImageView mFrontImage;
     private FrameLayout mImageContainer;
-    private TextView mCaptionView;
+    private SharedMainUI mMainUI;
 
     public LightsPresenter(Context ctx) {
         super(DefaultColorOn, ctx.getResources().getColor(R.color.lights_on_main_text_color));
@@ -29,8 +29,8 @@ public class LightsPresenter extends CategoryPresenter {
     }
 
     @Override
-    public View onAttachView(ViewGroup parent, TextView caption, SpeechCategory category) {
-        mCaptionView = caption;
+    public View onAttachView(ViewGroup parent, SharedMainUI ui, SpeechCategory category) {
+        mMainUI = ui;
         Context context = parent.getContext();
         synchronized (this) {
             if (mImageContainer == null) {
@@ -57,7 +57,7 @@ public class LightsPresenter extends CategoryPresenter {
                 mImageContainer = null;
                 mFrontImage = null;
                 mBackImage = null;
-                mCaptionView = null;
+                mMainUI = null;
             }
         }
     }
@@ -89,18 +89,17 @@ public class LightsPresenter extends CategoryPresenter {
             animateBackgroundColor(parent,
                     blendColors(DefaultColorOn, DefaultColorOff, alpha),
                     blendColors(DefaultColorOn, DefaultColorOff, imageOpacity));
-            animateTextColor(mCaptionView,
-                    blendColors(mMainTextColor, mMainTextColorOff, alpha),
+            mMainUI.animateTextColor(blendColors(mMainTextColor, mMainTextColorOff, alpha),
                     blendColors(mMainTextColor, mMainTextColorOff, imageOpacity));
         } else {
             if (isOn) {
                 mFrontImage.setAlpha(imageOpacity);
                 parent.setBackgroundColor(blendColors(DefaultColorOn, DefaultColorOff, imageOpacity));
-                mCaptionView.setTextColor(mMainTextColor);
+                mMainUI.setTextColor(mMainTextColor);
             } else {
                 mFrontImage.setAlpha(0f);
                 parent.setBackgroundColor(DefaultColorOff);
-                mCaptionView.setTextColor(mMainTextColorOff);
+                mMainUI.setTextColor(mMainTextColorOff);
             }
         }
     }

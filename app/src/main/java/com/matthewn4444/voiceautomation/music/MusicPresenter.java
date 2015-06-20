@@ -7,7 +7,6 @@ import android.content.res.ColorStateList;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.drawable.BitmapDrawable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v8.renderscript.Allocation;
@@ -23,10 +22,10 @@ import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.TextView;
 
 import com.matthewn4444.voiceautomation.CategoryPresenter;
 import com.matthewn4444.voiceautomation.R;
+import com.matthewn4444.voiceautomation.SharedMainUI;
 import com.matthewn4444.voiceautomation.SpeechCategory;
 
 import java.util.UUID;
@@ -44,8 +43,7 @@ public class MusicPresenter extends CategoryPresenter {
     private View mBackgroundView;
     private BitmapDrawable mBlurredDrawable;
     private BitmapDrawable mBackgroundDrawable;
-    private UUID mBlurredSongId;
-    private UUID mBackgroundSongId;
+    private UUID mSongId;
 
     private Animation mSlideInAnimation1;
     private Animation mSlideInAnimation2;
@@ -67,7 +65,7 @@ public class MusicPresenter extends CategoryPresenter {
     }
 
     @Override
-    public View onAttachView(ViewGroup parent, TextView caption, SpeechCategory category) {
+    public View onAttachView(ViewGroup parent, SharedMainUI ui, SpeechCategory category) {
         synchronized (this) {
             if (mMainImage == null) {
                 final Context ctx = parent.getContext();
@@ -155,28 +153,22 @@ public class MusicPresenter extends CategoryPresenter {
         }
     }
 
-    public void handleMainUI(View backgroundView, TextView captionView, UUID songId, Bitmap albumArt) {
-        if (albumArt != null) {
-            if (mBackgroundSongId != songId || mBackgroundDrawable == null) {
-                mBackgroundSongId = songId;
-                mBackgroundDrawable = setBackgroundImage(backgroundView, albumArt, false);
-            }
-        } else {
-            mBackgroundDrawable = null;
-            backgroundView.setBackground(null);
-        }
-    }
-
-    public void updateFromSongData(UUID songId, Bitmap bitmap) {
+    public void updateMainUI(SharedMainUI ui, Song song, Bitmap bitmap) {
         if (bitmap != null) {
-            if (mBlurredSongId != songId || mBlurredDrawable == null) {
-                mBlurredSongId = songId;
+            UUID id = song.getId();
+            if (id != mSongId || mBlurredDrawable == null) {
+                mSongId = id;
                 mBlurredDrawable = setBackgroundImage(mBackgroundView, bitmap, true);
+                mBackgroundDrawable = setBackgroundImage(ui.getBackgroundView(), bitmap, false);
+            } else {
+                mBackgroundView.setBackground(mBlurredDrawable);
+                ui.setBackground(mBackgroundDrawable);
             }
         } else {
-            mBlurredDrawable = null;
+            ui.clearBackground();
             mBackgroundView.setBackground(null);
         }
+        ui.setText(song.getTitle(), song.getArtist());
     }
 
     // Crops image to screen and then blurs if requested
@@ -208,7 +200,6 @@ public class MusicPresenter extends CategoryPresenter {
 
         // Add 35% black overlay over the image
         Canvas canvas = new Canvas(croppedImage);
-        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         canvas.drawColor(Color.argb((int)(255 * 0.35f), 0, 0, 0));
 
         BitmapDrawable image = new BitmapDrawable(backgroundView.getResources(), croppedImage);

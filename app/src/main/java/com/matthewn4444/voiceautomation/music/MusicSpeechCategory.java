@@ -6,6 +6,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.matthewn4444.voiceautomation.R;
+import com.matthewn4444.voiceautomation.SharedMainUI;
 import com.matthewn4444.voiceautomation.SpeechCategory;
 import com.matthewn4444.voiceautomation.SpeechController;
 
@@ -34,7 +35,7 @@ public class MusicSpeechCategory extends SpeechCategory implements MusicControll
                 ctx.getString(R.string.settings_general_music_activation_command_key),
                 ctx.getString(R.string.assets_music_grammer_filename),
                 SpeechController.SpeechModel.DEFAULT,
-                ctx.getString(R.string.prompt_control_music), "1e-9");
+                ctx.getString(R.string.prompt_control_music), "1e-8");
         mController = new MusicController(ctx);
         mController.setOnSongChangedListener(this);
     }
@@ -86,7 +87,6 @@ public class MusicSpeechCategory extends SpeechCategory implements MusicControll
 
     @Override
     public void onSongChanged(Song song) {
-        ((MusicPresenter)getPresenter()).updateFromSongData(mController.getSongId(), mController.getPlayingAlbumArt());
         stateInvalidated();
     }
 
@@ -101,10 +101,10 @@ public class MusicSpeechCategory extends SpeechCategory implements MusicControll
     }
 
     @Override
-    public void handleMainUI(View backgroundView, TextView mainTextView) {
-        super.handleMainUI(backgroundView, mainTextView);
-        ((MusicPresenter)getPresenter()).handleMainUI(backgroundView, mainTextView,
-                mController.getSongId(), mController.getPlayingAlbumArt());
+    public void handleMainUI(SharedMainUI ui) {
+        super.handleMainUI(ui);
+        ((MusicPresenter)getPresenter()).updateMainUI(ui, mController.getCurrentSong(),
+                mController.getPlayingAlbumArt());
     }
 
     public boolean isMute() {

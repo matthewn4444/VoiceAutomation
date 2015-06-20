@@ -40,11 +40,11 @@ public abstract class CategoryPresenter {
      * can also add a background to the parent, that will not move. The entire parent is faded in
      * upon speech command selection.
      * @param parent
-     * @param caption
+     * @param ui
      * @param category
      * @return
      */
-    public abstract View onAttachView(ViewGroup parent, TextView caption, SpeechCategory category);
+    public abstract View onAttachView(ViewGroup parent, SharedMainUI ui, SpeechCategory category);
 
     /**
      * Detach and null your views that were attached to parent in onAttachView. The view that you

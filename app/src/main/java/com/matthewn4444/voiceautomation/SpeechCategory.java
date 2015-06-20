@@ -84,7 +84,7 @@ public abstract class SpeechCategory {
         mListener = listener;
     }
 
-    public void handleMainUI(View backgroundView, TextView mainTextView) {
+    public void handleMainUI(SharedMainUI ui) {
     }
 
     public SpeechModel getModelType() {

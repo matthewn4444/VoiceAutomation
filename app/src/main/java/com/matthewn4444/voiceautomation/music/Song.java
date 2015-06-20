@@ -26,7 +26,7 @@ public class Song {
         return mId;
     }
 
-    public String getTitla() {
+    public String getTitle() {
         return mTitle;
     }
 

@@ -21,13 +21,12 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
 
     private final Activity mActivity;
 
-    private final TextView mCaptionField;
+    private final SharedMainUI mSharedUI;
     private final TextView mResultField;
     private final TextView mDateField;
     private final TextView mTimeField;
     private final ViewGroup mMainCategoryHolder;
     private final HashMap<SpeechCategory, View> mCategoryViews;
-    private final View mBackgroundView;
     private final int mUITextColor;
 
     private final Animation mMainImageSlideIn;
@@ -45,13 +44,14 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
     public UIPresenter(Activity activity) {
         mActivity = activity;
         mUITextColor = activity.getResources().getColor(R.color.ui_text_color);
-        mCaptionField = (TextView) activity.findViewById(R.id.caption);
         mResultField = (TextView) activity.findViewById(R.id.result);
         mTimeField = (TextView) activity.findViewById(R.id.time);
         mDateField = (TextView) activity.findViewById(R.id.date);
         mMainCategoryHolder = (ViewGroup) activity.findViewById(R.id.main_category_holder);
-        mBackgroundView = activity.findViewById(R.id.background);
         mCategoryViews = new HashMap<>();
+        mSharedUI = new SharedMainUI((TextView) activity.findViewById(R.id.caption),
+                (TextView) activity.findViewById(R.id.subcaption),
+                activity.findViewById(R.id.background));
         speechHasReset();
 
         mMainImageSlideIn = AnimationUtils.loadAnimation(mActivity, R.anim.slide_in_main_image);
@@ -70,17 +70,21 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
 
     @Override
     public void onSpeechError(Exception e) {
-        mCaptionField.setText(e.getMessage());
+        mSharedUI.setText(e.getMessage());
         Toast.makeText(mActivity.getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onBeginSpeechCategory(SpeechCategory category) {
         if (category == null) {
-            mCaptionField.setText(R.string.prompt_ready);
+            if (mPriorityCategory != null) {
+                onUIStateChanged(mPriorityCategory);
+            } else {
+                mSharedUI.setText(R.string.prompt_ready);
+            }
         } else {
             cancelTimer();
-            mCaptionField.setText(category.getMessage());
+            mSharedUI.setText(category.getMessage());
             if (!mCategoryImageIsShowing) {
                 mCategoryImageIsShowing = true;
                 showCategory(category);
@@ -119,38 +123,12 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
                             mCategoryImageIsShowing = false;
                             hideCategory(mCurrentCategory);
                             mCurrentCategory = null;
-
-                            // Recalculate the new priority category to handle main UI
-                            SpeechCategory cate = null;
-                            int currentPriority = SpeechCategory.NO_PRIORITY;
-                            for (SpeechCategory category : mCategoryViews.keySet()) {
-                                int priority = category.getUIPriority();
-                                if (priority > currentPriority) {
-                                    currentPriority = priority;
-                                    cate = category;
-                                }
-                            }
-                            if (cate != null) {
-                                if (mPriorityCategory != cate) {
-                                    if (mPriorityCategory != null) {
-                                        mPriorityCategory.setOnStateChangedListener(null);
-                                    }
-                                    mPriorityCategory = cate;
-                                    mPriorityCategory.setOnStateChangedListener(UIPresenter.this);
-                                    onUIStateChanged(mPriorityCategory);
-                                }
-                            } else {
-                                if (mPriorityCategory != null) {
-                                    mPriorityCategory.setOnStateChangedListener(null);
-                                    mPriorityCategory = null;
-                                }
-                                mBackgroundView.setBackground(null);
-                                mCaptionField.setText(R.string.prompt_ready);
-                            }
                         }
                     });
                 }
             }, CATEGORY_IMAGE_TIMEOUT);
+
+            updatePriority();
         } else {
             mResultField.setText("");
             mResultField.setVisibility(View.GONE);
@@ -166,7 +144,7 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
     public void onLock(boolean isLocked) {
         cancelTimer();
         if (isLocked) {
-            mCaptionField.setText(R.string.prompt_locked);
+            mSharedUI.setText(R.string.prompt_locked, R.string.prompt_locked_message);
             if (mCategoryImageIsShowing) {
                 hideCategory(mCurrentCategory);
                 mCategoryImageIsShowing = false;
@@ -182,7 +160,7 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
 
     @Override
     public void onUIStateChanged(SpeechCategory category) {
-        category.handleMainUI(mBackgroundView, mCaptionField);
+        category.handleMainUI(mSharedUI);
     }
 
     public void onPause() {
@@ -196,7 +174,7 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
 
     public void speechHasReset() {
         mActivity.getWindow().getDecorView().setBackgroundColor(Color.BLACK);
-        mCaptionField.setText(R.string.prompt_setup);
+        mSharedUI.setText(R.string.prompt_setup);
 
         for (SpeechCategory category : mCategoryViews.keySet()) {
             View view = mCategoryViews.get(category);
@@ -218,13 +196,43 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
 
         // TODO remove hardcode for color
         mActivity.getWindow().getDecorView().setBackgroundColor(Color.BLACK);
-        mCaptionField.setTextColor(mUITextColor);
+        mSharedUI.setTextColor(mUITextColor);
     }
 
     private void cancelTimer() {
         if (mHideTimer != null) {
             mHideTimer.cancel();
             mHideTimer = null;
+        }
+    }
+
+    private void updatePriority() {
+        // Recalculate the new priority category to handle main UI
+        SpeechCategory cate = null;
+        int currentPriority = SpeechCategory.NO_PRIORITY;
+        for (SpeechCategory category : mCategoryViews.keySet()) {
+            int priority = category.getUIPriority();
+            if (priority > currentPriority) {
+                currentPriority = priority;
+                cate = category;
+            }
+        }
+        if (cate != null) {
+            if (mPriorityCategory != cate) {
+                if (mPriorityCategory != null) {
+                    mPriorityCategory.setOnStateChangedListener(null);
+                }
+                mPriorityCategory = cate;
+                mPriorityCategory.setOnStateChangedListener(UIPresenter.this);
+                onUIStateChanged(mPriorityCategory);
+            }
+        } else {
+            if (mPriorityCategory != null) {
+                mPriorityCategory.setOnStateChangedListener(null);
+                mPriorityCategory = null;
+            }
+            mSharedUI.clearBackground();
+            mSharedUI.setText(R.string.prompt_ready);
         }
     }
 
@@ -274,7 +282,7 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
             FrameLayout layout;
             if (view == null) {
                 layout = new FrameLayout(mActivity);
-                view = category.getPresenter().onAttachView(layout, mCaptionField, category);
+                view = category.getPresenter().onAttachView(layout, mSharedUI, category);
                 mMainCategoryHolder.addView(layout);
                 mCategoryViews.put(category, view);
             } else {
@@ -290,7 +298,7 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
 
             // Animate the text color back to normal
             CategoryPresenter presenter = category.getPresenter();
-            CategoryPresenter.animateTextColor(mCaptionField, mUITextColor, presenter.getTextColor(category));
+            mSharedUI.animateTextColor(mUITextColor, presenter.getTextColor(category));
             presenter.onShowPresenter(category);
         }
     }
@@ -308,7 +316,7 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
 
             // Animate the text color back to normal
             CategoryPresenter presenter = category.getPresenter();
-            CategoryPresenter.animateTextColor(mCaptionField, presenter.getTextColor(category), mUITextColor);
+            mSharedUI.animateTextColor(presenter.getTextColor(category), mUITextColor);
             presenter.onHidePresenter(category);
         }
     }
@@ -317,7 +325,6 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
         Calendar now = Calendar.getInstance();
         int hour = now.get(Calendar.HOUR_OF_DAY);
         int minute = now.get(Calendar.MINUTE);
-        int day = now.get(Calendar.DAY_OF_MONTH);
         String dayOfWeek = now.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.LONG, Locale.getDefault());
         String month = now.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.getDefault());
         String hourStr = hour == 12 || hour == 0 ? "12" : Integer.toString(hour % 12);

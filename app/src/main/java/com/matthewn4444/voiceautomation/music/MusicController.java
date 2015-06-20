@@ -24,7 +24,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 public class MusicController implements MediaPlayer.OnCompletionListener {
     private static final String TAG = "MusicController";
@@ -228,8 +227,8 @@ public class MusicController implements MediaPlayer.OnCompletionListener {
         }
     }
 
-    public UUID getSongId() {
-        return mCurrentSong != null ? mCurrentSong.getId() : null;
+    public Song getCurrentSong() {
+        return mCurrentSong;
     }
 
     public Bitmap getPlayingAlbumArt() {
