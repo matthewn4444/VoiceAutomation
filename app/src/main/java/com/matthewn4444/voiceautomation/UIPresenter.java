@@ -10,7 +10,9 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -21,9 +23,12 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
 
     private final TextView mCaptionField;
     private final TextView mResultField;
+    private final TextView mDateField;
+    private final TextView mTimeField;
     private final ViewGroup mMainCategoryHolder;
     private final HashMap<SpeechCategory, View> mCategoryViews;
     private final View mBackgroundView;
+    private final int mUITextColor;
 
     private final Animation mMainImageSlideIn;
     private final Animation mMainImageSlideOut;
@@ -34,12 +39,16 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
     private SpeechCategory mPriorityCategory;
     private SpeechCategory mCurrentCategory;
     private Timer mHideTimer;
+    private SecondCounter mSecondCounter;
     private boolean mCategoryImageIsShowing;
 
     public UIPresenter(Activity activity) {
         mActivity = activity;
+        mUITextColor = activity.getResources().getColor(R.color.ui_text_color);
         mCaptionField = (TextView) activity.findViewById(R.id.caption);
         mResultField = (TextView) activity.findViewById(R.id.result);
+        mTimeField = (TextView) activity.findViewById(R.id.time);
+        mDateField = (TextView) activity.findViewById(R.id.date);
         mMainCategoryHolder = (ViewGroup) activity.findViewById(R.id.main_category_holder);
         mBackgroundView = activity.findViewById(R.id.background);
         mCategoryViews = new HashMap<>();
@@ -52,6 +61,8 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
         mMainImageFadeOut = AnimationUtils.loadAnimation(mActivity, R.anim.fade_out_main_image);
 
         setupAnimations();
+
+        setupSecondCounter();
     }
 
     @Override
@@ -134,6 +145,7 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
                                     mPriorityCategory = null;
                                 }
                                 mBackgroundView.setBackground(null);
+                                mCaptionField.setText(R.string.prompt_ready);
                             }
                         }
                     });
@@ -173,7 +185,17 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
         category.handleMainUI(mBackgroundView, mCaptionField);
     }
 
+    public void onPause() {
+        mSecondCounter.stop();
+    }
+
+    public void onResume() {
+        updateTime();
+        mSecondCounter.start();
+    }
+
     public void speechHasReset() {
+        mActivity.getWindow().getDecorView().setBackgroundColor(Color.BLACK);
         mCaptionField.setText(R.string.prompt_setup);
 
         for (SpeechCategory category : mCategoryViews.keySet()) {
@@ -196,7 +218,7 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
 
         // TODO remove hardcode for color
         mActivity.getWindow().getDecorView().setBackgroundColor(Color.BLACK);
-        mCaptionField.setTextColor(Color.WHITE);
+        mCaptionField.setTextColor(mUITextColor);
     }
 
     private void cancelTimer() {
@@ -235,6 +257,17 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
         });
     }
 
+    private void setupSecondCounter() {
+        mSecondCounter = new SecondCounter(mActivity);
+        mSecondCounter.setOnTimeUpdateListener(new SecondCounter.OnTimeUpdateListener() {
+            @Override
+            public void onTimeUpdate() {
+                updateTime();
+            }
+        });
+        mSecondCounter.start();
+    }
+
     private void showCategory(SpeechCategory category) {
         if (category != null) {
             View view = mCategoryViews.get(category);
@@ -257,7 +290,7 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
 
             // Animate the text color back to normal
             CategoryPresenter presenter = category.getPresenter();
-            CategoryPresenter.animateTextColor(mCaptionField, Color.WHITE, presenter.getTextColor(category));
+            CategoryPresenter.animateTextColor(mCaptionField, mUITextColor, presenter.getTextColor(category));
             presenter.onShowPresenter(category);
         }
     }
@@ -275,8 +308,21 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
 
             // Animate the text color back to normal
             CategoryPresenter presenter = category.getPresenter();
-            CategoryPresenter.animateTextColor(mCaptionField, presenter.getTextColor(category), Color.WHITE);
+            CategoryPresenter.animateTextColor(mCaptionField, presenter.getTextColor(category), mUITextColor);
             presenter.onHidePresenter(category);
         }
+    }
+
+    private void updateTime() {
+        Calendar now = Calendar.getInstance();
+        int hour = now.get(Calendar.HOUR_OF_DAY);
+        int minute = now.get(Calendar.MINUTE);
+        int day = now.get(Calendar.DAY_OF_MONTH);
+        String dayOfWeek = now.getDisplayName(Calendar.DAY_OF_WEEK, Calendar.LONG, Locale.getDefault());
+        String month = now.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.getDefault());
+        String hourStr = hour == 12 || hour == 0 ? "12" : Integer.toString(hour % 12);
+        String minStr = minute < 10 ? "0" + minute : Integer.toString(minute);
+        mTimeField.setText(hourStr + ":" + minStr);
+        mDateField.setText(dayOfWeek + ", " + month + " " + now.get(Calendar.DAY_OF_MONTH));
     }
 }

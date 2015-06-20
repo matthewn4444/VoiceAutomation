@@ -3,6 +3,33 @@
     xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
     android:layout_height="match_parent" tools:context=".ListeningActivity">
 
+    <!-- Date and Time -->
+    <LinearLayout
+        android:orientation="vertical"
+        android:weightSum="10"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <Space
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:layout_weight="2"/>
+        <TextView
+            android:id="@+id/time"
+            android:layout_gravity="center_horizontal"
+            android:textSize="100sp"
+            android:fontFamily="sans-serif-thin"
+            android:textColor="@color/ui_text_color"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+        <TextView
+            android:id="@+id/date"
+            android:textColor="@color/ui_text_color"
+            android:textSize="18sp"
+            android:layout_gravity="center_horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
     <FrameLayout
         android:id="@+id/main_category_holder"
         android:layout_width="match_parent"
@@ -22,8 +49,10 @@
             android:id="@+id/caption"
             android:textSize="30sp"
             android:text="Loading"
-            android:textStyle="bold"
-            android:textColor="@android:color/white"
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:fontFamily="sans-serif-light"
+            android:textColor="@color/ui_text_color"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
@@ -38,7 +67,7 @@
             android:paddingBottom="5dp"
             android:paddingLeft="10dp"
             android:paddingRight="10dp"
-            android:textColor="@android:color/white"
+            android:textColor="@color/ui_text_color"
             android:background="@android:color/black"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />

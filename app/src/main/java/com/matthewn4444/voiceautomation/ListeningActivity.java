@@ -52,6 +52,7 @@ public class ListeningActivity extends AppCompatActivity implements
         if (mLightAutomator != null) {
             mLightAutomator.onPause();
         }
+        mPresenter.onPause();
         mPresenter.immediatelyHideCategory();
         for (SpeechCategory cate: mCategories) {
             cate.pause();
@@ -65,6 +66,7 @@ public class ListeningActivity extends AppCompatActivity implements
         if (mLightAutomator != null) {
             mLightAutomator.onResume();
         }
+        mPresenter.onResume();
         mController.resume();
         for (SpeechCategory cate: mCategories) {
             cate.resume();
