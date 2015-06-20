@@ -4,14 +4,24 @@ import android.animation.ArgbEvaluator;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.drawable.BitmapDrawable;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v8.renderscript.Allocation;
+import android.support.v8.renderscript.Element;
+import android.support.v8.renderscript.RenderScript;
+import android.support.v8.renderscript.ScriptIntrinsicBlur;
+import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -19,12 +29,23 @@ import com.matthewn4444.voiceautomation.CategoryPresenter;
 import com.matthewn4444.voiceautomation.R;
 import com.matthewn4444.voiceautomation.SpeechCategory;
 
+import java.util.UUID;
+
 public class MusicPresenter extends CategoryPresenter {
     private static final int DELAY_ANIMATION_STEP = 150;
+
+    private final int mScreenWidth;
+    private final int mScreenHeight;
+    private final RenderScript mRS;
 
     private ImageView mMainImage;
     private FloatingActionButton mShuffleButton;
     private FloatingActionButton mRepeatButton;
+    private View mBackgroundView;
+    private BitmapDrawable mBlurredDrawable;
+    private BitmapDrawable mBackgroundDrawable;
+    private UUID mBlurredSongId;
+    private UUID mBackgroundSongId;
 
     private Animation mSlideInAnimation1;
     private Animation mSlideInAnimation2;
@@ -38,6 +59,11 @@ public class MusicPresenter extends CategoryPresenter {
 
     public MusicPresenter(Context context) {
         super(context.getResources().getColor(R.color.music_main_background), Color.WHITE);
+        mRS = RenderScript.create(context);
+
+        DisplayMetrics metrics = context.getApplicationContext().getResources().getDisplayMetrics();
+        mScreenWidth = metrics.widthPixels;
+        mScreenHeight = metrics.heightPixels;
     }
 
     @Override
@@ -45,6 +71,9 @@ public class MusicPresenter extends CategoryPresenter {
         synchronized (this) {
             if (mMainImage == null) {
                 final Context ctx = parent.getContext();
+                mBackgroundView = new FrameLayout(ctx);
+                parent.addView(mBackgroundView);
+
                 mMainImage = new ImageView(ctx);
                 mMainImage.setImageResource(R.drawable.music);
                 parent.addView(mMainImage);
@@ -124,6 +153,67 @@ public class MusicPresenter extends CategoryPresenter {
             }
             mRepeatState = repeatOn;
         }
+    }
+
+    public void handleMainUI(View backgroundView, TextView captionView, UUID songId, Bitmap albumArt) {
+        if (albumArt != null) {
+            if (mBackgroundSongId != songId || mBackgroundDrawable == null) {
+                mBackgroundSongId = songId;
+                mBackgroundDrawable = setBackgroundImage(backgroundView, albumArt, false);
+            }
+        } else {
+            mBackgroundDrawable = null;
+            backgroundView.setBackground(null);
+        }
+    }
+
+    public void updateFromSongData(UUID songId, Bitmap bitmap) {
+        if (bitmap != null) {
+            if (mBlurredSongId != songId || mBlurredDrawable == null) {
+                mBlurredSongId = songId;
+                mBlurredDrawable = setBackgroundImage(mBackgroundView, bitmap, true);
+            }
+        } else {
+            mBlurredDrawable = null;
+            mBackgroundView.setBackground(null);
+        }
+    }
+
+    // Crops image to screen and then blurs if requested
+    private BitmapDrawable setBackgroundImage(View backgroundView, Bitmap bitmap, boolean blur) {
+        float screenRatio = mScreenWidth * 1.0f / mScreenHeight;
+        float imageRatio = bitmap.getWidth() * 1.0f / bitmap.getHeight();
+        int w, h;
+        Bitmap croppedImage;
+        if (screenRatio < imageRatio) {
+            w = Math.round(bitmap.getWidth() * screenRatio);
+            h = bitmap.getHeight();
+            croppedImage = Bitmap.createBitmap(bitmap, Math.abs(bitmap.getWidth() - w) / 2, 0, w, h);
+        } else {
+            w = bitmap.getWidth();
+            h = Math.round(bitmap.getHeight() * screenRatio);
+            croppedImage = Bitmap.createBitmap(bitmap, 0, Math.abs(bitmap.getHeight() - h) / 2, w, h);
+        }
+
+        if (blur) {
+            croppedImage = Bitmap.createScaledBitmap(croppedImage, mScreenWidth / 4, mScreenHeight / 4, true);
+            final Allocation input = Allocation.createFromBitmap(mRS, croppedImage);
+            final Allocation output = Allocation.createTyped(mRS, input.getType());
+            final ScriptIntrinsicBlur script = ScriptIntrinsicBlur.create(mRS, Element.U8_4(mRS));
+            script.setRadius(8f);
+            script.setInput(input);
+            script.forEach(output);
+            output.copyTo(croppedImage);
+        }
+
+        // Add 35% black overlay over the image
+        Canvas canvas = new Canvas(croppedImage);
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        canvas.drawColor(Color.argb((int)(255 * 0.35f), 0, 0, 0));
+
+        BitmapDrawable image = new BitmapDrawable(backgroundView.getResources(), croppedImage);
+        backgroundView.setBackground(image);
+        return image;
     }
 
     private void animateBackgroundColor(final FloatingActionButton button, int from, int to) {

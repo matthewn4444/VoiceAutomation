@@ -2,12 +2,15 @@ package com.matthewn4444.voiceautomation;
 
 import android.content.Context;
 import android.preference.PreferenceManager;
+import android.view.View;
+import android.widget.TextView;
 
 import com.matthewn4444.voiceautomation.SpeechController.PartialReturnResult;
 import com.matthewn4444.voiceautomation.SpeechController.SpeechModel;
 
 public abstract class SpeechCategory {
     public final static String DefaultThreshold = "1e-1";
+    public final static int NO_PRIORITY = -1;
     public final static int DefaultTimeout = 10000;
 
     private final Context mCtx;
@@ -19,7 +22,13 @@ public abstract class SpeechCategory {
     private final String mSettingsActivationKey;
     private final String mSettingsDefaultCommand;
 
+    private OnUIStateChangedListener mListener;
+
     private String mActivationPhrase;
+
+    public interface OnUIStateChangedListener {
+        public void onUIStateChanged(SpeechCategory category);
+    }
 
     public SpeechCategory(Context context, CategoryPresenter presenter, String defaultActivationCommand,
                           String settingsActivationKey, String assetsGrammerFile, SpeechModel model, String message) {
@@ -63,9 +72,20 @@ public abstract class SpeechCategory {
         return result;
     }
 
+    public int getUIPriority() {
+        return NO_PRIORITY;
+    }
+
     public void pause() {}
 
     public void resume() {}
+
+    public void setOnStateChangedListener(OnUIStateChangedListener listener) {
+        mListener = listener;
+    }
+
+    public void handleMainUI(View backgroundView, TextView mainTextView) {
+    }
 
     public SpeechModel getModelType() {
         return mModel;
@@ -89,6 +109,12 @@ public abstract class SpeechCategory {
 
     protected String getString(int key) {
         return mCtx.getString(key);
+    }
+
+    protected void stateInvalidated() {
+        if (mListener != null) {
+            mListener.onUIStateChanged(this);
+        }
     }
 
     private void updateActivationCommandFromSettings() {

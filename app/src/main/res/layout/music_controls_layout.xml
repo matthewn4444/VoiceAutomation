@@ -1,38 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:orientation="horizontal"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:weightSum="2">
-    <FrameLayout
-        android:layout_weight="1"
+    android:layout_height="match_parent">
+    <LinearLayout
+        android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/shuffle"
-            android:layout_marginTop="100dp"
-            android:layout_gravity="center_horizontal"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_shuffle_white_24dp"
-            app:rippleColor="@color/music_controls_ripple_off"
-            app:backgroundTint="@color/music_controls_background_off"
-            app:elevation="15dp"/>
-    </FrameLayout>
-    <FrameLayout
-        android:layout_weight="1"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/repeat"
-            android:layout_marginTop="100dp"
-            android:layout_gravity="center_horizontal"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_repeat_white_24dp"
-            app:rippleColor="@color/music_controls_ripple_off"
-            app:backgroundTint="@color/music_controls_background_off"
-            app:elevation="15dp"/>
-    </FrameLayout>
-</LinearLayout>
+        android:layout_height="match_parent"
+        android:weightSum="2">
+        <FrameLayout
+            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/shuffle"
+                android:layout_marginTop="100dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_shuffle_white_24dp"
+                app:rippleColor="@color/music_controls_ripple_off"
+                app:backgroundTint="@color/music_controls_background_off"
+                app:elevation="15dp"/>
+        </FrameLayout>
+        <FrameLayout
+            android:layout_weight="1"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/repeat"
+                android:layout_marginTop="100dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_repeat_white_24dp"
+                app:rippleColor="@color/music_controls_ripple_off"
+                app:backgroundTint="@color/music_controls_background_off"
+                app:elevation="15dp"/>
+        </FrameLayout>
+    </LinearLayout>
+</FrameLayout>

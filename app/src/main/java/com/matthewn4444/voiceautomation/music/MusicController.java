@@ -1,10 +1,15 @@
 package com.matthewn4444.voiceautomation.music;
 
+import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
@@ -13,13 +18,17 @@ import android.util.Log;
 import com.matthewn4444.voiceautomation.R;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 public class MusicController implements MediaPlayer.OnCompletionListener {
     private static final String TAG = "MusicController";
+    private static final Uri ART_CONTENT_URI = Uri.parse("content://media/external/audio/albumart");
 
     public static final String[] MUSIC_PROJECTION = {
             MediaStore.Audio.Media._ID,
@@ -37,10 +46,12 @@ public class MusicController implements MediaPlayer.OnCompletionListener {
     private final String mShuffleKey;
     private final String mRepeatKey;
 
+    private OnStateChangedListener mListener;
     private MediaPlayer mMediaPlayer;
     private Context mCtx;
     private Song mCurrentSong;
     private int mCurrentSongPosition;
+    private Bitmap mCachedAlbumArt;
 
     // States
     private boolean mIsPlaying;
@@ -48,6 +59,11 @@ public class MusicController implements MediaPlayer.OnCompletionListener {
     private boolean mIsRepeatOn;
     private boolean mIsMute;
     private boolean mIsMusicReady;
+
+    public interface OnStateChangedListener {
+        public void onSongChanged(Song song);
+        public void onPlayStateChange(boolean isPlaying);
+    }
 
     public MusicController(final Context ctx) {
         mCtx = ctx;
@@ -148,6 +164,10 @@ public class MusicController implements MediaPlayer.OnCompletionListener {
         getAudioManager().adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, 0);
     }
 
+    public void setOnSongChangedListener(OnStateChangedListener listener) {
+        mListener = listener;
+    }
+
     public void setMute(boolean flag) {
         mIsMute = flag;
         getAudioManager().setStreamMute(AudioManager.STREAM_MUSIC, flag);
@@ -208,6 +228,40 @@ public class MusicController implements MediaPlayer.OnCompletionListener {
         }
     }
 
+    public UUID getSongId() {
+        return mCurrentSong != null ? mCurrentSong.getId() : null;
+    }
+
+    public Bitmap getPlayingAlbumArt() {
+        return mCachedAlbumArt;
+    }
+
+    public void cachePlayingAlbumArt() {
+        long id = mCurrentSong != null ? mCurrentSong.getArtId() : 0;
+        if (id == 0) {
+            mCachedAlbumArt = null;
+        } else {
+            Uri albumArtUri = ContentUris.withAppendedId(ART_CONTENT_URI, id);
+            ContentResolver res = mCtx.getContentResolver();
+            Bitmap image = null;
+            InputStream in = null;
+            try {
+                in = res.openInputStream(albumArtUri);
+                image = BitmapFactory.decodeStream(in);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } finally {
+                if (in != null) {
+                    try {
+                        in.close();
+                    } catch (Exception e) {
+                    }
+                }
+            }
+            mCachedAlbumArt = image;
+        }
+    }
+
     public boolean isPlaying() {
         return mIsPlaying;
     }
@@ -263,14 +317,22 @@ public class MusicController implements MediaPlayer.OnCompletionListener {
                 e.printStackTrace();
                 freeMusicPlayer();
                 log("error");
+                mCachedAlbumArt = null;
+                if (mListener != null) {
+                    mListener.onSongChanged(null);
+                }
                 return;
             }
         } else {
             Log.i("lunch", "Path does not exist: " + path.getPath());
         }
         mCurrentSong = song;
+        cachePlayingAlbumArt();
         if (playNow) {
             internalPlay();
+        }
+        if (mListener != null) {
+            mListener.onSongChanged(mCurrentSong);
         }
         log("plays song");
     }
@@ -279,7 +341,12 @@ public class MusicController implements MediaPlayer.OnCompletionListener {
         log("internal play");
         if (mMediaPlayer != null) {
             mMediaPlayer.start();
-            mIsPlaying = true;
+            if (!mIsPlaying) {
+                mIsPlaying = true;
+                if (mListener != null) {
+                    mListener.onPlayStateChange(true);
+                }
+            }
         }
     }
 
@@ -287,7 +354,12 @@ public class MusicController implements MediaPlayer.OnCompletionListener {
         log("internal pause");
         if (mMediaPlayer != null) {
             mMediaPlayer.pause();
-            mIsPlaying = false;
+            if (mIsPlaying) {
+                mIsPlaying = false;
+                if (mListener != null) {
+                    mListener.onPlayStateChange(false);
+                }
+            }
         }
     }
 

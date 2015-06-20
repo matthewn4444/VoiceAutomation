@@ -1,13 +1,15 @@
 package com.matthewn4444.voiceautomation.music;
 
 import android.content.Context;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.matthewn4444.voiceautomation.R;
 import com.matthewn4444.voiceautomation.SpeechCategory;
 import com.matthewn4444.voiceautomation.SpeechController;
 
-public class MusicSpeechCategory extends SpeechCategory {
+public class MusicSpeechCategory extends SpeechCategory implements MusicController.OnStateChangedListener {
     private static final String TAG = "MusicSpeechCategory";
 
     public static final String[] COMMAND_PLAY_MUSIC = {"play", "play music", "play song"};
@@ -34,11 +36,13 @@ public class MusicSpeechCategory extends SpeechCategory {
                 SpeechController.SpeechModel.DEFAULT,
                 ctx.getString(R.string.prompt_control_music), "1e-9");
         mController = new MusicController(ctx);
+        mController.setOnSongChangedListener(this);
     }
 
     @Override
     public void onResult(final String result) {
         if (result != null && isAvailable()) {
+            MusicPresenter presenter = (MusicPresenter) getPresenter();
             if (matchOneOf(result, COMMAND_PLAY_MUSIC)) {
                 mController.play();
             } else if (matchOneOf(result, COMMAND_PAUSE)) {
@@ -71,13 +75,36 @@ public class MusicSpeechCategory extends SpeechCategory {
                 Toast.makeText(getContext(), "Music Command '" + result + "' is not supported",
                         Toast.LENGTH_SHORT).show();
             }
-            ((MusicPresenter)getPresenter()).updateState(this);
+            presenter.updateState(this);
         }
     }
 
     @Override
     public boolean isAvailable() {
         return mController.isAvailable();
+    }
+
+    @Override
+    public void onSongChanged(Song song) {
+        ((MusicPresenter)getPresenter()).updateFromSongData(mController.getSongId(), mController.getPlayingAlbumArt());
+        stateInvalidated();
+    }
+
+    @Override
+    public void onPlayStateChange(boolean isPlaying) {
+        stateInvalidated();
+    }
+
+    @Override
+    public int getUIPriority() {
+        return mController.isPlaying() ? 1 : NO_PRIORITY;
+    }
+
+    @Override
+    public void handleMainUI(View backgroundView, TextView mainTextView) {
+        super.handleMainUI(backgroundView, mainTextView);
+        ((MusicPresenter)getPresenter()).handleMainUI(backgroundView, mainTextView,
+                mController.getSongId(), mController.getPlayingAlbumArt());
     }
 
     public boolean isMute() {

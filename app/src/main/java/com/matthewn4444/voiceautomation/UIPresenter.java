@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class UIPresenter implements SpeechController.SpeechListener {
+public class UIPresenter implements SpeechController.SpeechListener, SpeechCategory.OnUIStateChangedListener {
     public static final int CATEGORY_IMAGE_TIMEOUT = 5000;
 
     private final Activity mActivity;
@@ -23,6 +23,7 @@ public class UIPresenter implements SpeechController.SpeechListener {
     private final TextView mResultField;
     private final ViewGroup mMainCategoryHolder;
     private final HashMap<SpeechCategory, View> mCategoryViews;
+    private final View mBackgroundView;
 
     private final Animation mMainImageSlideIn;
     private final Animation mMainImageSlideOut;
@@ -30,6 +31,7 @@ public class UIPresenter implements SpeechController.SpeechListener {
     private final Animation mMainImageFadeIn;
     private final Animation mMainImageFadeOut;
 
+    private SpeechCategory mPriorityCategory;
     private SpeechCategory mCurrentCategory;
     private Timer mHideTimer;
     private boolean mCategoryImageIsShowing;
@@ -39,6 +41,7 @@ public class UIPresenter implements SpeechController.SpeechListener {
         mCaptionField = (TextView) activity.findViewById(R.id.caption);
         mResultField = (TextView) activity.findViewById(R.id.result);
         mMainCategoryHolder = (ViewGroup) activity.findViewById(R.id.main_category_holder);
+        mBackgroundView = activity.findViewById(R.id.background);
         mCategoryViews = new HashMap<>();
         speechHasReset();
 
@@ -105,6 +108,33 @@ public class UIPresenter implements SpeechController.SpeechListener {
                             mCategoryImageIsShowing = false;
                             hideCategory(mCurrentCategory);
                             mCurrentCategory = null;
+
+                            // Recalculate the new priority category to handle main UI
+                            SpeechCategory cate = null;
+                            int currentPriority = SpeechCategory.NO_PRIORITY;
+                            for (SpeechCategory category : mCategoryViews.keySet()) {
+                                int priority = category.getUIPriority();
+                                if (priority > currentPriority) {
+                                    currentPriority = priority;
+                                    cate = category;
+                                }
+                            }
+                            if (cate != null) {
+                                if (mPriorityCategory != cate) {
+                                    if (mPriorityCategory != null) {
+                                        mPriorityCategory.setOnStateChangedListener(null);
+                                    }
+                                    mPriorityCategory = cate;
+                                    mPriorityCategory.setOnStateChangedListener(UIPresenter.this);
+                                    onUIStateChanged(mPriorityCategory);
+                                }
+                            } else {
+                                if (mPriorityCategory != null) {
+                                    mPriorityCategory.setOnStateChangedListener(null);
+                                    mPriorityCategory = null;
+                                }
+                                mBackgroundView.setBackground(null);
+                            }
                         }
                     });
                 }
@@ -136,6 +166,11 @@ public class UIPresenter implements SpeechController.SpeechListener {
     public void onCategoryUnavailable(SpeechCategory category) {
         Toast.makeText(mActivity, "'" + category.getActivationCommand()
                 + "' is unavailable", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onUIStateChanged(SpeechCategory category) {
+        category.handleMainUI(mBackgroundView, mCaptionField);
     }
 
     public void speechHasReset() {
