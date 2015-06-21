@@ -359,9 +359,11 @@ public class LFXLANTransportManager extends LFXTransportManager implements LFXGa
 		if( existingConnection == null)
 		{
 			LFXGatewayConnection newConnection = LFXGatewayConnection.getGatewayConnectionWithGatewayDescriptor( gateway, this);
-			newConnection.connect();
-			gatewayConnections.put( gateway, newConnection);
-			connectionStatesDidChange();
+			if (newConnection != null) {
+                newConnection.connect();
+                gatewayConnections.put( gateway, newConnection);
+                connectionStatesDidChange();
+			}
 		}
 	}
 }

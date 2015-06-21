@@ -81,7 +81,7 @@ public class LFXGatewayDescriptor
 
 	public String getProtocolString()
 	{
-		return service.toString();
+		return service != null ? service.toString() : "null";
 	}
 
 	public String toString()

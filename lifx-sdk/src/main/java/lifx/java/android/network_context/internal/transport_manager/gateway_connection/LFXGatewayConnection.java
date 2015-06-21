@@ -14,6 +14,7 @@ import lifx.java.android.entities.internal.LFXGatewayDescriptor;
 import lifx.java.android.entities.internal.LFXMessage;
 import lifx.java.android.entities.internal.structle.LxProtocol;
 import lifx.java.android.entities.internal.structle.LxProtocol.Type;
+import lifx.java.android.entities.internal.structle.LxProtocolDevice;
 
 public abstract class LFXGatewayConnection
 {
@@ -48,14 +49,17 @@ public abstract class LFXGatewayConnection
 	{
 		// TODO: implement TCP
 		
-		switch( gatewayDescriptor.getService())
-		{
-			case LX_PROTOCOL_DEVICE_SERVICE_TCP:
-				break;
-			case LX_PROTOCOL_DEVICE_SERVICE_UDP:
-				return new LFXUDPGatewayConnection( gatewayDescriptor, listener);
-			default:
-				break;
+		LxProtocolDevice.Service service = gatewayDescriptor.getService();
+		if (service != null) {
+            switch( service )
+            {
+                case LX_PROTOCOL_DEVICE_SERVICE_TCP:
+                    break;
+                case LX_PROTOCOL_DEVICE_SERVICE_UDP:
+                    return new LFXUDPGatewayConnection( gatewayDescriptor, listener);
+                default:
+                    break;
+            }
 		}
 		
 		return null;
