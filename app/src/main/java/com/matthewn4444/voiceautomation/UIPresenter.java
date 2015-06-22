@@ -100,6 +100,7 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
     @Override
     public void onPartialResult(String text) {
         if (!text.equals("")) {
+            mResultField.clearAnimation();
             mResultField.setText(text);
             mResultField.setVisibility(View.VISIBLE);
         }
