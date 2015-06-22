@@ -15,4 +15,11 @@
         android:defaultValue="@integer/settings_default_speech_noise_timeout_min"
         app:max="20"
         app:min="2"/>
+    <com.matthewn4444.voiceautomation.settings.preferences.NumberPickerPreference
+        android:title="@string/settings_speech_partial_result_changed_title"
+        android:key="@string/settings_speech_partial_result_changed_key"
+        android:summary="@string/settings_speech_partial_result_changed_summary"
+        android:defaultValue="@integer/settings_default_speech_max_partial_result_changed"
+        app:max="8"
+        app:min="2"/>
 </PreferenceScreen>

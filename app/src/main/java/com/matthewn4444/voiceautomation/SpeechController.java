@@ -56,6 +56,9 @@ public class SpeechController implements RecognitionListener {
     private String LOCK_PHRASE2;
     private String UNLOCK_PHRASE;
 
+    private int mPartialResultDiffCount;
+    private String mLastPartialResult;
+
     private SoundPool mSoundPool;
     private int mSoundStartId;
     private int mSoundResultId;
@@ -152,6 +155,8 @@ public class SpeechController implements RecognitionListener {
         if (cate != null) {
             if (cate.isAvailable()) {
                 switchSearch(text);
+                mLastPartialResult = null;
+                mPartialResultDiffCount = 0;
             } else {
                 if (mListener != null) {
                     mListener.onCategoryUnavailable(cate);
@@ -182,6 +187,18 @@ public class SpeechController implements RecognitionListener {
             if (mListener != null) {
                 mListener.onPartialResult(text);
             }
+
+            // Keep track of constantly changing partial results, if we exceed said amount, end speech
+            if (mLastPartialResult == null || !text.startsWith(mLastPartialResult)) {
+                mPartialResultDiffCount++;
+
+                if (mPartialResultDiffCount >= LazyPref.getIntDefaultRes(mCtx,
+                        R.string.settings_speech_partial_result_changed_key,
+                        R.integer.settings_default_speech_max_partial_result_changed)) {
+                    endSpeech();
+                }
+            }
+            mLastPartialResult = text;
         }
     }
 

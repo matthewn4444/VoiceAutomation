@@ -2,6 +2,7 @@
 <resources>
     <integer name="settings_default_speech_keyword_timeout_min">3</integer>
     <integer name="settings_default_speech_noise_timeout_min">10</integer>
+    <integer name="settings_default_speech_max_partial_result_changed">4</integer>
 
     <!-- Speech Settings -->
     <string name="settings_speech_header_title">Speech</string>
@@ -13,4 +14,8 @@
     <string name="settings_speech_noise_timeout_title">Speech Noise Timeout (sec)</string>
     <string name="settings_speech_noise_timeout_key">settings.key.speech.noise.timeout</string>
     <string name="settings_speech_noise_timeout_summary">Ends voice input after a couple of seconds when waiting for command with noise in the background.</string>
+
+    <string name="settings_speech_partial_result_changed_title">Max Partial Results Before End</string>
+    <string name="settings_speech_partial_result_changed_key">settings.key.speech.partial.result.changed</string>
+    <string name="settings_speech_partial_result_changed_summary">Choose how many results to show before ending speech because it cannot understand your commands.</string>
 </resources>
