@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <PreferenceCategory android:title="@string/settings_music_cate_art_title">
+        <CheckBoxPreference
+            android:disableDependentsState="true"
+            android:title="@string/settings_music_art_disable_title"
+            android:key="@string/settings_music_art_disable_key"/>
+        <CheckBoxPreference
+            android:title="@string/settings_music_art_blur_command_title"
+            android:key="@string/settings_music_art_blur_command_key"
+            android:summary="@string/settings_music_art_blur_command_summary"
+            android:dependency="@string/settings_music_art_disable_key"/>
+        <com.matthewn4444.voiceautomation.settings.preferences.SliderPreference
+            android:title="@string/settings_music_art_opacity_title"
+            android:key="@string/settings_music_art_opacity_key"
+            android:dialogMessage="@string/settings_music_art_opacity_message"
+            android:defaultValue="@string/settings_default_album_art_darken_opacity"
+            app:label="@string/settings_value_label"
+            app:suffix="@string/settings_value_suffix_percentage"
+            android:dependency="@string/settings_music_art_disable_key"/>
+    </PreferenceCategory>
+</PreferenceScreen>

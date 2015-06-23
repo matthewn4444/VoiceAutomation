@@ -103,8 +103,8 @@
             android:key="@string/settings_light_auto_max_automated_brightness_key"
             android:dialogMessage="@string/settings_light_auto_max_automated_brightness_message"
             android:defaultValue="1"
-            app:label="@string/settings_light_auto_max_automated_brightness_message_value_label"
-            app:suffix="@string/settings_light_auto_max_automated_brightness_message_value_suffix"/>
+            app:label="@string/settings_value_label"
+            app:suffix="@string/settings_value_suffix_percentage"/>
 
     </PreferenceCategory>
 </PreferenceScreen>

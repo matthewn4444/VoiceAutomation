@@ -25,6 +25,7 @@ public class Settings extends PreferenceActivity {
     private static final String[] FragmentNames = {
             SpeechPrefFragment.class.getName(),
             LightAutomationPrefFragment.class.getName(),
+            MusicPrefFragment.class.getName(),
     };
 
     @Override
@@ -72,6 +73,18 @@ public class Settings extends PreferenceActivity {
                 bar.setTitle(R.string.settings_speech_header_title);
             }
             addPreferencesFromResource(R.xml.settings_speech);
+        }
+    }
+
+    public static class MusicPrefFragment extends PreferenceFragment {
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            ActionBar bar = getActivity().getActionBar();
+            if (bar != null) {
+                bar.setTitle(R.string.settings_music_header_title);
+            }
+            addPreferencesFromResource(R.xml.settings_music);
         }
     }
 

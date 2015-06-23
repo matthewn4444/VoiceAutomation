@@ -24,6 +24,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import com.matthewn4444.voiceautomation.CategoryPresenter;
+import com.matthewn4444.voiceautomation.LazyPref;
 import com.matthewn4444.voiceautomation.R;
 import com.matthewn4444.voiceautomation.SharedMainUI;
 import com.matthewn4444.voiceautomation.SpeechCategory;
@@ -36,6 +37,7 @@ public class MusicPresenter extends CategoryPresenter {
     private final int mScreenWidth;
     private final int mScreenHeight;
     private final RenderScript mRS;
+    private final float mDefaultDarkenOpacity;
 
     private ImageView mMainImage;
     private FloatingActionButton mShuffleButton;
@@ -44,6 +46,8 @@ public class MusicPresenter extends CategoryPresenter {
     private BitmapDrawable mBlurredDrawable;
     private BitmapDrawable mBackgroundDrawable;
     private UUID mSongId;
+    private boolean mLastSettingsToBlur;
+    private float mLastSettingsDarkenOpacity;
 
     private Animation mSlideInAnimation1;
     private Animation mSlideInAnimation2;
@@ -62,6 +66,10 @@ public class MusicPresenter extends CategoryPresenter {
         DisplayMetrics metrics = context.getApplicationContext().getResources().getDisplayMetrics();
         mScreenWidth = metrics.widthPixels;
         mScreenHeight = metrics.heightPixels;
+
+        mDefaultDarkenOpacity = Float.parseFloat(context.getString(R.string.settings_default_album_art_darken_opacity));
+        mLastSettingsToBlur = shouldBlur(context);
+        mLastSettingsDarkenOpacity = getArtDarkenOpacity(context);
     }
 
     @Override
@@ -156,9 +164,14 @@ public class MusicPresenter extends CategoryPresenter {
     public void updateMainUI(SharedMainUI ui, Song song, Bitmap bitmap) {
         if (bitmap != null) {
             UUID id = song.getId();
-            if (id != mSongId || mBlurredDrawable == null) {
+            boolean shouldBlur = shouldBlur(ui.getContext());
+            float darkenOpacity = getArtDarkenOpacity(ui.getContext());
+            if (id != mSongId || mBlurredDrawable == null
+                    || shouldBlur != mLastSettingsToBlur || darkenOpacity != mLastSettingsDarkenOpacity) {
                 mSongId = id;
-                mBlurredDrawable = setBackgroundImage(mBackgroundView, bitmap, true);
+                mLastSettingsToBlur = shouldBlur;
+                mLastSettingsDarkenOpacity = darkenOpacity;
+                mBlurredDrawable = setBackgroundImage(mBackgroundView, bitmap, shouldBlur);
                 mBackgroundDrawable = setBackgroundImage(ui.getBackgroundView(), bitmap, false);
             } else {
                 mBackgroundView.setBackground(mBlurredDrawable);
@@ -200,7 +213,7 @@ public class MusicPresenter extends CategoryPresenter {
 
         // Add 35% black overlay over the image
         Canvas canvas = new Canvas(croppedImage);
-        canvas.drawColor(Color.argb((int)(255 * 0.35f), 0, 0, 0));
+        canvas.drawColor(Color.argb((int)(255 * mLastSettingsDarkenOpacity), 0, 0, 0));
 
         BitmapDrawable image = new BitmapDrawable(backgroundView.getResources(), croppedImage);
         backgroundView.setBackground(image);
@@ -218,5 +231,13 @@ public class MusicPresenter extends CategoryPresenter {
             }
         });
         animator.start();
+    }
+
+    private boolean shouldBlur(Context ctx) {
+        return !LazyPref.getBool(ctx, R.string.settings_music_art_blur_command_key);
+    }
+
+    private float getArtDarkenOpacity(Context ctx) {
+        return LazyPref.getFloat(ctx, R.string.settings_music_art_opacity_key, mDefaultDarkenOpacity);
     }
 }

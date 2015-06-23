@@ -64,8 +64,6 @@
     <string name="settings_light_auto_max_automated_brightness_title">Max Automated Brightness</string>
     <string name="settings_light_auto_max_automated_brightness_key">settings.key.light.auto.max.automated.brightness</string>
     <string name="settings_light_auto_max_automated_brightness_message">Please set the maximum brightness that the light automation will use.\n</string>
-    <string name="settings_light_auto_max_automated_brightness_message_value_label">Value: </string>
-    <string name="settings_light_auto_max_automated_brightness_message_value_suffix">%</string>
 
     <!-- Light Automation Location Settings -->
     <string name="setting_light_location_hardcode_location_title">Hardcode Location</string>

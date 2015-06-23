@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="settings_value_label">Value: </string>
+    <string name="settings_value_suffix_percentage">%</string>
+
     <!-- Settings and Keys -->
     <string name="settings_key_cached_latitude">settings.key.cached.latitude</string>
     <string name="settings_key_cached_longitude">settings.key.cached.longitude</string>

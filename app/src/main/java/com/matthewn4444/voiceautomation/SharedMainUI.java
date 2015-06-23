@@ -1,5 +1,6 @@
 package com.matthewn4444.voiceautomation;
 
+import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.view.View;
 import android.widget.TextView;
@@ -65,5 +66,9 @@ public class SharedMainUI {
 
     public View getBackgroundView() {
         return mBackground;
+    }
+
+    public Context getContext() {
+        return mCaption.getContext();
     }
 }

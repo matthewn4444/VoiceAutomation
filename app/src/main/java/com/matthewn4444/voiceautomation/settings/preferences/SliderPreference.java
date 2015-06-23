@@ -49,7 +49,12 @@ public class SliderPreference extends DialogPreference {
 
     @Override
     protected void onSetInitialValue(boolean restoreValue, Object defaultValue) {
-        setValue(restoreValue ? getPersistedFloat(mValue) : (Float) defaultValue);
+        if (restoreValue) {
+            setValue(getPersistedFloat(mValue));
+        } else {
+            float value = defaultValue instanceof String ? Float.parseFloat((String) defaultValue) : (Float) defaultValue;
+            setValue(value);
+        }
     }
 
     @Override

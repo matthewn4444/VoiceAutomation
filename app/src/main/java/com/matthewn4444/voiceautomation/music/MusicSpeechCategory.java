@@ -1,10 +1,10 @@
 package com.matthewn4444.voiceautomation.music;
 
 import android.content.Context;
-import android.view.View;
-import android.widget.TextView;
+import android.graphics.Bitmap;
 import android.widget.Toast;
 
+import com.matthewn4444.voiceautomation.LazyPref;
 import com.matthewn4444.voiceautomation.R;
 import com.matthewn4444.voiceautomation.SharedMainUI;
 import com.matthewn4444.voiceautomation.SpeechCategory;
@@ -103,8 +103,11 @@ public class MusicSpeechCategory extends SpeechCategory implements MusicControll
     @Override
     public void handleMainUI(SharedMainUI ui) {
         super.handleMainUI(ui);
-        ((MusicPresenter)getPresenter()).updateMainUI(ui, mController.getCurrentSong(),
-                mController.getPlayingAlbumArt());
+        Bitmap albumArt = null;
+        if (!LazyPref.getBool(getContext(), R.string.settings_music_art_disable_key)) {
+            albumArt = mController.getPlayingAlbumArt();
+        }
+        ((MusicPresenter)getPresenter()).updateMainUI(ui, mController.getCurrentSong(), albumArt);
     }
 
     public boolean isMute() {

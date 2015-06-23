@@ -1,10 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="settings_default_activation_command_music">music</string>
+    <string name="settings_default_album_art_darken_opacity">0.4</string>
 
     <string name="setings_music_controls_state_shuffle">settings.key.music.controls.state.shuffle</string>
     <string name="setings_music_controls_state_repeat">settings.key.music.controls.state.repeat</string>
 
     <string name="settings_general_music_enable_key">settings.key.general.music.enable</string>
     <string name="settings_general_music_activation_command_key">settings.key.general.light.activation.command</string>
+
+    <string name="settings_music_header_title">Music</string>
+
+    <!-- Album Art Settings -->
+    <string name="settings_music_cate_art_title">Album Art</string>
+
+    <string name="settings_music_art_disable_title">Do Not Album Art</string>
+    <string name="settings_music_art_disable_key">settings.key.music.art.disable</string>
+
+    <string name="settings_music_art_blur_command_title">Do Not Blur Art On Voice Input</string>
+    <string name="settings_music_art_blur_command_key">settings.key.music.art.blur.command</string>
+    <string name="settings_music_art_blur_command_summary">When inputting music commands, do not blur the album art shown</string>
+
+    <string name="settings_music_art_opacity_title">Album Art Darken Percentage</string>
+    <string name="settings_music_art_opacity_key">settings.key.music.art.opacity</string>
+    <string name="settings_music_art_opacity_message">Set the darken overlay (opacity of black) applied on the album art.</string>
 </resources>

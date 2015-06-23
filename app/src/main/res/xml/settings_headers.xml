@@ -4,4 +4,6 @@
         android:title="@string/settings_speech_header_title"/>
     <header android:fragment="com.matthewn4444.voiceautomation.settings.Settings$LightAutomationPrefFragment"
         android:title="@string/settings_light_auto_header_title"/>
+    <header android:fragment="com.matthewn4444.voiceautomation.settings.Settings$MusicPrefFragment"
+        android:title="@string/settings_music_header_title"/>
 </preference-headers>
