@@ -31,6 +31,7 @@ public class SpeechController implements RecognitionListener {
     private static final String LOCK_SEARCH = "lock";
     private static final String KWS_SEARCH = "command";
 
+    private static final int SAME_PARTIAL_RESULT_TIMEOUT = 2000;
 
     public static enum SpeechModel {
         DEFAULT, PHONETIC, LANGUAGE
@@ -57,6 +58,7 @@ public class SpeechController implements RecognitionListener {
     private String UNLOCK_PHRASE;
 
     private int mPartialResultDiffCount;
+    private long mPartialResultTimeLastChange;
     private String mLastPartialResult;
 
     private SoundPool mSoundPool;
@@ -191,10 +193,23 @@ public class SpeechController implements RecognitionListener {
             // Keep track of constantly changing partial results, if we exceed said amount, end speech
             if (mLastPartialResult == null || !text.startsWith(mLastPartialResult)) {
                 mPartialResultDiffCount++;
-
                 if (mPartialResultDiffCount >= LazyPref.getIntDefaultRes(mCtx,
                         R.string.settings_speech_partial_result_changed_key,
                         R.integer.settings_default_speech_max_partial_result_changed)) {
+                    endSpeech();
+                }
+            }
+
+            // When the partial result does not change for a couple of seconds, decide whether to select or end
+            if (!text.equals(mLastPartialResult)) {
+                mPartialResultTimeLastChange = System.currentTimeMillis();
+            } else if (System.currentTimeMillis() - mPartialResultTimeLastChange > SAME_PARTIAL_RESULT_TIMEOUT) {
+                if (mPartialResultDiffCount == 1) {
+                    // Found phrase first try but waiting too long might be voice command
+                    onResult(hypothesis);
+                    onTimeout();
+                } else {
+                    // End speech because it changed a couple of times and waiting too long - noise
                     endSpeech();
                 }
             }
