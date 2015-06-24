@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 public class MusicController implements MediaPlayer.OnCompletionListener {
     private static final String TAG = "MusicController";
@@ -50,7 +51,13 @@ public class MusicController implements MediaPlayer.OnCompletionListener {
     private Context mCtx;
     private Song mCurrentSong;
     private int mCurrentSongPosition;
-    private Bitmap mCachedAlbumArt;
+
+    // Album Art
+    private Bitmap mCachedPrevAlbumArt;
+    private Bitmap mCachedCurrentAlbumArt;
+    private Bitmap mCachedNextAlbumArt;
+    private Bitmap mCachedFirstShuffleAlbumArt;
+    private Song mFirstSongInShuffle;
 
     // States
     private boolean mIsPlaying;
@@ -123,6 +130,11 @@ public class MusicController implements MediaPlayer.OnCompletionListener {
                     Log.v(TAG, "There is no music on this phone and therefore we cannot use music.");
                 } else {
                     mIsMusicReady = true;
+
+                    // Preload all potential next album arts
+                    cacheNextAlbumArt();
+                    cachePrevAlbumArt();
+                    cacheFirstShuffledSong();
                 }
             }
         }.execute();
@@ -151,7 +163,6 @@ public class MusicController implements MediaPlayer.OnCompletionListener {
         log("shuffle all");
         freeMusicPlayer();
         internalShuffleList();
-        mCurrentSongPosition = 0;
         playNextSong();
     }
 
@@ -195,7 +206,13 @@ public class MusicController implements MediaPlayer.OnCompletionListener {
                 }
             }
         }
+
+        // Slide the album art down the chain
+        mCachedPrevAlbumArt = mCachedCurrentAlbumArt;
+        mCachedCurrentAlbumArt = mCachedNextAlbumArt;
+        mCachedNextAlbumArt = null;     // temp
         prepareMusic(mSongList.get(mCurrentSongPosition));
+        cacheNextAlbumArt();
     }
 
     public void playPreviousSong() {
@@ -210,7 +227,13 @@ public class MusicController implements MediaPlayer.OnCompletionListener {
         } else {
             mCurrentSongPosition--;
         }
+
+        // Slide the images up the chain
+        mCachedNextAlbumArt = mCachedCurrentAlbumArt;
+        mCachedCurrentAlbumArt = mCachedPrevAlbumArt;
+        mCachedPrevAlbumArt = null;     // temp
         prepareMusic(mSongList.get(mCurrentSongPosition));
+        cachePrevAlbumArt();
     }
 
     public void setShuffle(boolean on) {
@@ -232,33 +255,7 @@ public class MusicController implements MediaPlayer.OnCompletionListener {
     }
 
     public Bitmap getPlayingAlbumArt() {
-        return mCachedAlbumArt;
-    }
-
-    public void cachePlayingAlbumArt() {
-        long id = mCurrentSong != null ? mCurrentSong.getArtId() : 0;
-        if (id == 0) {
-            mCachedAlbumArt = null;
-        } else {
-            Uri albumArtUri = ContentUris.withAppendedId(ART_CONTENT_URI, id);
-            ContentResolver res = mCtx.getContentResolver();
-            Bitmap image = null;
-            InputStream in = null;
-            try {
-                in = res.openInputStream(albumArtUri);
-                image = BitmapFactory.decodeStream(in);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } finally {
-                if (in != null) {
-                    try {
-                        in.close();
-                    } catch (Exception e) {
-                    }
-                }
-            }
-            mCachedAlbumArt = image;
-        }
+        return mCachedCurrentAlbumArt;
     }
 
     public boolean isPlaying() {
@@ -316,7 +313,7 @@ public class MusicController implements MediaPlayer.OnCompletionListener {
                 e.printStackTrace();
                 freeMusicPlayer();
                 log("error");
-                mCachedAlbumArt = null;
+                mCachedCurrentAlbumArt = null;
                 if (mListener != null) {
                     mListener.onSongChanged(null);
                 }
@@ -326,7 +323,6 @@ public class MusicController implements MediaPlayer.OnCompletionListener {
             Log.i("lunch", "Path does not exist: " + path.getPath());
         }
         mCurrentSong = song;
-        cachePlayingAlbumArt();
         if (playNow) {
             internalPlay();
         }
@@ -363,11 +359,94 @@ public class MusicController implements MediaPlayer.OnCompletionListener {
     }
 
     protected void internalShuffleList() {
+        mCurrentSongPosition = 0;
+
+        // Remove first shuffle song from list, shuffle remaining and add first back on top
+        mSongList.remove(mFirstSongInShuffle);
         Collections.shuffle(mSongList);
+        mSongList.add(0, mFirstSongInShuffle);
+
+        // Update the album arts now that we have shuffled, we make sure that next song runs after this
+        mCachedCurrentAlbumArt = null;
+        mCachedPrevAlbumArt = null;
+        mCachedNextAlbumArt = mCachedFirstShuffleAlbumArt;
+
+        // Cache the new previous song and first shuffle song
+        cachePrevAlbumArt();
+        cacheFirstShuffledSong();
     }
 
     protected AudioManager getAudioManager() {
         return (AudioManager) mCtx.getSystemService(Context.AUDIO_SERVICE);
+    }
+
+    protected Bitmap getAlbumArt(long id) {
+        Bitmap image = null;
+        if (id != 0) {
+            Uri albumArtUri = ContentUris.withAppendedId(ART_CONTENT_URI, id);
+            ContentResolver res = mCtx.getContentResolver();
+            InputStream in = null;
+            try {
+                in = res.openInputStream(albumArtUri);
+                image = BitmapFactory.decodeStream(in);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } finally {
+                if (in != null) {
+                    try {
+                        in.close();
+                    } catch (Exception e) {
+                    }
+                }
+            }
+        }
+        return image;
+    }
+
+    private void cacheNextAlbumArt() {
+        // Preload next one
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                long id = mSongList.get(mCurrentSong != null ? mCurrentSongPosition + 1 : mCurrentSongPosition).getArtId();
+                mCachedNextAlbumArt = getAlbumArt(id);
+                return null;
+            }
+        }.execute();
+    }
+
+    private void cachePrevAlbumArt() {
+        // Preload prev one
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                long id;
+                if (mCurrentSong == null || mCurrentSongPosition == 0) {
+                    if (mIsRepeatOn) {
+                        id = mSongList.get(mSongList.size() - 1).getArtId();
+                    } else {
+                        // Since repeat is off, this function should do nothing
+                        return null;
+                    }
+                } else {
+                    id = mSongList.get(mCurrentSongPosition - 1).getArtId();
+                }
+                mCachedPrevAlbumArt = getAlbumArt(id);
+                return null;
+            }
+        }.execute();
+    }
+
+    private void cacheFirstShuffledSong() {
+        // Handle album art for random song
+        new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... params) {
+                mFirstSongInShuffle = mSongList.get(new Random().nextInt(mSongList.size()));
+                mCachedFirstShuffleAlbumArt = getAlbumArt(mFirstSongInShuffle.getArtId());
+                return null;
+            }
+        }.execute();
     }
 
     public static void log(Object... txt) {
