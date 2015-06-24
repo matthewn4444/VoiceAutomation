@@ -2,8 +2,6 @@ package com.matthewn4444.voiceautomation;
 
 import android.content.Context;
 import android.preference.PreferenceManager;
-import android.view.View;
-import android.widget.TextView;
 
 import com.matthewn4444.voiceautomation.SpeechController.PartialReturnResult;
 import com.matthewn4444.voiceautomation.SpeechController.SpeechModel;
@@ -11,7 +9,6 @@ import com.matthewn4444.voiceautomation.SpeechController.SpeechModel;
 public abstract class SpeechCategory {
     public final static String DefaultThreshold = "1e-1";
     public final static int NO_PRIORITY = -1;
-    public final static int DefaultTimeout = 10000;
 
     private final Context mCtx;
     private final String mThreshold;
@@ -119,7 +116,6 @@ public abstract class SpeechCategory {
 
     private void updateActivationCommandFromSettings() {
         mActivationPhrase = PreferenceManager.getDefaultSharedPreferences(mCtx)
-                .getString(mCtx.getString(R.string.settings_general_light_activation_command_key),
-                        mSettingsDefaultCommand);
+                .getString(mSettingsActivationKey, mSettingsDefaultCommand);
     }
 }
