@@ -11,8 +11,7 @@ import com.matthewn4444.voiceautomation.lights.LightsSpeechCategory;
 import com.matthewn4444.voiceautomation.music.MusicSpeechCategory;
 import com.matthewn4444.voiceautomation.settings.Settings;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
 
 
 public class ListeningActivity extends AppCompatActivity implements
@@ -21,7 +20,7 @@ public class ListeningActivity extends AppCompatActivity implements
     private static final int SettingsButtonId = R.id.settings_button;
 
     private UIPresenter mPresenter;
-    private List<SpeechCategory> mCategories = new ArrayList<>();
+    private HashMap<String, SpeechCategory> mCategories = new HashMap<>();
     private SpeechController mController;
     private LightsAutomator mLightAutomator;
 
@@ -43,6 +42,7 @@ public class ListeningActivity extends AppCompatActivity implements
         }
 
         mPresenter = new UIPresenter(this);
+
         setupSpeechController();
     }
 
@@ -54,8 +54,8 @@ public class ListeningActivity extends AppCompatActivity implements
         }
         mPresenter.onPause();
         mPresenter.immediatelyHideCategory();
-        for (SpeechCategory cate: mCategories) {
-            cate.pause();
+        for (String key: mCategories.keySet()) {
+            mCategories.get(key).pause();
         }
         super.onPause();
     }
@@ -68,8 +68,8 @@ public class ListeningActivity extends AppCompatActivity implements
         }
         mPresenter.onResume();
         mController.resume();
-        for (SpeechCategory cate: mCategories) {
-            cate.resume();
+        for (String key: mCategories.keySet()) {
+            mCategories.get(key).resume();
         }
     }
 
@@ -99,8 +99,13 @@ public class ListeningActivity extends AppCompatActivity implements
         if (requestCode == REQUEST_CODE_SETTINGS) {
             // Check if any of the speech categories has changed their commands
             boolean speechControllerNeedsReset = false;
-            for (SpeechCategory category : mCategories) {
-                if (category.updateAndHasActivationCommand()) {
+            for (String key : mCategories.keySet()) {
+                SpeechCategory cate = mCategories.get(key);
+                String oldCommand = cate.getActivationCommand();
+                if (cate.updateAndHasActivationCommand()) {
+                    // Since the command changed, change the key to the new command
+                    mCategories.remove(oldCommand);
+                    mCategories.put(cate.getActivationCommand(), cate);
                     speechControllerNeedsReset = true;
                 }
             }
@@ -111,12 +116,21 @@ public class ListeningActivity extends AppCompatActivity implements
                 if (newEnableLights) {
                     // Just enabled the lights
                     mLightAutomator = new LightsAutomator(this);
+
+                    // TODO this is a temp thing, make this smarter, wrap each category to control settings
+                    addCategory(new LightsSpeechCategory(this, mLightAutomator.getLightController()));
                 } else {
                     // Just disabled the lights
                     LightsAutomator.cancelAutomator(this);
                     mLightAutomator.getLightController().disconnect();
                     mLightAutomator.onPause();
                     mLightAutomator = null;
+
+                    // TODO make this smarter
+                    String lightsCommand = LazyPref.getStringDefaultRes(this,
+                            R.string.settings_general_light_activation_command_key,
+                            R.string.settings_default_activation_command_lights);
+                    mCategories.remove(lightsCommand);
                 }
                 speechControllerNeedsReset = true;
                 mEnableLights = newEnableLights;
@@ -147,12 +161,17 @@ public class ListeningActivity extends AppCompatActivity implements
     }
 
     private void setupSpeechController() {
-        mCategories.clear();
-        if (mLightAutomator != null) {
-            mCategories.add(new LightsSpeechCategory(this, mLightAutomator.getLightController()));
+        if (mCategories.isEmpty()) {
+            if (mLightAutomator != null) {
+                addCategory(new LightsSpeechCategory(this, mLightAutomator.getLightController()));
+            }
+            addCategory(new MusicSpeechCategory(this));
         }
-        mCategories.add(new MusicSpeechCategory(this));
         mController = new SpeechController(this, mCategories);
         mController.setSpeechListener(mPresenter);
+    }
+
+    private void addCategory(SpeechCategory category) {
+        mCategories.put(category.getActivationCommand(), category);
     }
 }

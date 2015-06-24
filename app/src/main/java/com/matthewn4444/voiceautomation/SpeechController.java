@@ -13,7 +13,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -37,9 +36,8 @@ public class SpeechController implements RecognitionListener {
         DEFAULT, PHONETIC, LANGUAGE
     };
 
-    private final List<SpeechCategory> mCategories;
     private final Context mCtx;
-    private final HashMap<String, SpeechCategory> mLookup;
+    private final HashMap<String, SpeechCategory> mCategories;
     private final AudioManager mAudioManager;
 
     private SpeechRecognizer mRecognizer;
@@ -85,10 +83,9 @@ public class SpeechController implements RecognitionListener {
         public void onCategoryUnavailable(SpeechCategory category);
     }
 
-    public SpeechController(Context ctx, List<SpeechCategory> categories) {
+    public SpeechController(Context ctx, HashMap<String, SpeechCategory> categories) {
         mCtx = ctx;
         mCategories = categories;
-        mLookup = new HashMap<>();
         mAudioManager = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
         mIsReady = false;
         mIsLocked = false;
@@ -96,10 +93,6 @@ public class SpeechController implements RecognitionListener {
         LOCK_PHRASE1 = mCtx.getString(R.string.command_default_lock1);
         LOCK_PHRASE2 = mCtx.getString(R.string.command_default_lock2);
         UNLOCK_PHRASE = mCtx.getString(R.string.command_default_unlock);
-
-        for (SpeechCategory cate: categories) {
-            mLookup.put(cate.getActivationCommand(), cate);
-        }
 
         // Initialize the recognition software
         new AsyncTask<Void, Void, Exception>() {
@@ -136,7 +129,7 @@ public class SpeechController implements RecognitionListener {
 
     @Override
     public void onBeginningOfSpeech() {
-        mCurrentCategory = mLookup.get(mRecognizer.getSearchName());
+        mCurrentCategory = mCategories.get(mRecognizer.getSearchName());
     }
 
     @Override
@@ -153,7 +146,7 @@ public class SpeechController implements RecognitionListener {
         String text = hypothesis.getHypstr().trim();
         Log.v(TAG, "Partial result: " + text);
 
-        SpeechCategory cate = mLookup.get(text);
+        SpeechCategory cate = mCategories.get(text);
         if (cate != null) {
             if (cate.isAvailable()) {
                 switchSearch(text);
@@ -297,7 +290,7 @@ public class SpeechController implements RecognitionListener {
             }
         } else {
             playSoundEffect(mSoundStartId);
-            final SpeechCategory cate = mLookup.get(searchName);
+            final SpeechCategory cate = mCategories.get(searchName);
             if (cate != null) {
                 mDelay.postDelayed(new Runnable() {
                     @Override
@@ -388,8 +381,8 @@ public class SpeechController implements RecognitionListener {
         mRecognizer.addKeywordSearch(KWS_SEARCH, mCommandFile);
 
         // Add grammar searches
-        for (SpeechCategory cate: mCategories) {
-            String command = cate.getActivationCommand();
+        for (String command: mCategories.keySet()) {
+            SpeechCategory cate = mCategories.get(command);
             File grammerFile = new File(assetsDir, cate.getGrammerFileName());
             switch (cate.getModelType()) {
                 case DEFAULT:
@@ -413,8 +406,8 @@ public class SpeechController implements RecognitionListener {
         // Create the speech file
         try {
             writeStream = mCtx.openFileOutput(CommandFileName, Context.MODE_PRIVATE);
-            for (SpeechCategory cate: mCategories) {
-                writeStream.write((cate.getCommandGrammerLine() + "\n").getBytes());
+            for (String key: mCategories.keySet()) {
+                writeStream.write((mCategories.get(key).getCommandGrammerLine() + "\n").getBytes());
             }
 
             // Add phrases to stop listening

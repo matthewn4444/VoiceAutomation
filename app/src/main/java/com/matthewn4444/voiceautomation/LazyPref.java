@@ -17,6 +17,10 @@ public class LazyPref {
         return pref(ctx).getString(ctx.getString(key), defaultValue);
     }
 
+    static public String getStringDefaultRes(Context ctx, int key, int defaultRes) {
+        return pref(ctx).getString(ctx.getString(key), ctx.getString(defaultRes));
+    }
+
     static public int getInt(Context ctx, int key) {
         return getInt(ctx, key, 0);
     }
