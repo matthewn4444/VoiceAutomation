@@ -181,6 +181,36 @@ public class SpeechController implements RecognitionListener {
                     endSpeech(text);
                     return;
                 }
+
+                // Show the result on screen
+                if (mListener != null) {
+                    mListener.onPartialResult(text);
+                }
+
+                // Keep track of constantly changing partial results, if we exceed said amount, end speech
+                if (mLastPartialResult == null || !text.startsWith(mLastPartialResult)) {
+                    mPartialResultDiffCount++;
+                    if (mPartialResultDiffCount >= LazyPref.getIntDefaultRes(mCtx,
+                            R.string.settings_speech_partial_result_changed_key,
+                            R.integer.settings_default_speech_max_partial_result_changed)) {
+                        endSpeech();
+                    }
+                }
+
+                // When the partial result does not change for a couple of seconds, decide whether to select or end
+                if (!text.equals(mLastPartialResult)) {
+                    mPartialResultTimeLastChange = System.currentTimeMillis();
+                } else if (System.currentTimeMillis() - mPartialResultTimeLastChange > SAME_PARTIAL_RESULT_TIMEOUT) {
+                    if (mPartialResultDiffCount == 1) {
+                        // Found phrase first try but waiting too long might be voice command
+                        onResult(hypothesis);
+                        onTimeout();
+                    } else {
+                        // End speech because it changed a couple of times and waiting too long - noise
+                        endSpeech();
+                    }
+                }
+                mLastPartialResult = text;
             } else {
                 // Check quick commands for each category
                 boolean isSimilarToLastTime = mLastQuickCommand != null && text.startsWith(mLastQuickCommand);
@@ -197,34 +227,6 @@ public class SpeechController implements RecognitionListener {
                     }
                 }
             }
-            if (mListener != null) {
-                mListener.onPartialResult(text);
-            }
-
-            // Keep track of constantly changing partial results, if we exceed said amount, end speech
-            if (mLastPartialResult == null || !text.startsWith(mLastPartialResult)) {
-                mPartialResultDiffCount++;
-                if (mPartialResultDiffCount >= LazyPref.getIntDefaultRes(mCtx,
-                        R.string.settings_speech_partial_result_changed_key,
-                        R.integer.settings_default_speech_max_partial_result_changed)) {
-                    endSpeech();
-                }
-            }
-
-            // When the partial result does not change for a couple of seconds, decide whether to select or end
-            if (!text.equals(mLastPartialResult)) {
-                mPartialResultTimeLastChange = System.currentTimeMillis();
-            } else if (System.currentTimeMillis() - mPartialResultTimeLastChange > SAME_PARTIAL_RESULT_TIMEOUT) {
-                if (mPartialResultDiffCount == 1) {
-                    // Found phrase first try but waiting too long might be voice command
-                    onResult(hypothesis);
-                    onTimeout();
-                } else {
-                    // End speech because it changed a couple of times and waiting too long - noise
-                    endSpeech();
-                }
-            }
-            mLastPartialResult = text;
         }
     }
 
