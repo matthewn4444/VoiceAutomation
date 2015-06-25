@@ -2,8 +2,7 @@
 <resources>
     <color name="ui_text_color">#ddffffff</color>
 
-    <color name="lights_on_main_text_color">#fff39c12</color>
-    <color name="lights_off_main_text_color">@android:color/white</color>
+    <color name="lights_main_text_color">@android:color/black</color>
 
     <color name="music_main_background">#4183D7</color>
     <color name="music_controls_background_on">#ff9800</color>
