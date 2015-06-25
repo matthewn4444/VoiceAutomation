@@ -333,7 +333,7 @@ public class SpeechController implements RecognitionListener {
                             }, getNoiseTimeout());
                         }
                     }
-                }, 250);
+                }, 300);
             }
         }
     }
