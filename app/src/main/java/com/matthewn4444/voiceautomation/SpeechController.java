@@ -30,7 +30,7 @@ public class SpeechController implements RecognitionListener {
     private static final String LOCK_SEARCH = "lock";
     private static final String KWS_SEARCH = "command";
 
-    private static final int SAME_PARTIAL_RESULT_TIMEOUT = 2000;
+    private static final int SAME_PARTIAL_RESULT_TIMEOUT = 1000;
 
     public static enum SpeechModel {
         DEFAULT, PHONETIC, LANGUAGE
