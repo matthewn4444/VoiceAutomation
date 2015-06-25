@@ -211,7 +211,7 @@ public class SpeechController implements RecognitionListener {
                     }
                 }
                 mLastPartialResult = text;
-            } else {
+            } else if (!LazyPref.getBool(mCtx, R.string.settings_speech_disable_quick_commands_key)) {
                 // Check quick commands for each category
                 boolean isSimilarToLastTime = mLastQuickCommand != null && text.startsWith(mLastQuickCommand);
                 long now = System.currentTimeMillis();

@@ -18,4 +18,8 @@
     <string name="settings_speech_partial_result_changed_title">Max Partial Results Before End</string>
     <string name="settings_speech_partial_result_changed_key">settings.key.speech.partial.result.changed</string>
     <string name="settings_speech_partial_result_changed_summary">Choose how many results to show before ending speech because it cannot understand your commands.</string>
+
+    <string name="settings_speech_disable_quick_commands_title">Disable Quick Commands</string>
+    <string name="settings_speech_disable_quick_commands_key">settings.key.speech.disable.quick.commands</string>
+    <string name="settings_speech_disable_quick_commands_summary">Quick commands are commands said that do not require a keyword such as \'shuffle all songs\'.</string>
 </resources>

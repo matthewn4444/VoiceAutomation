@@ -22,4 +22,8 @@
         android:defaultValue="@integer/settings_default_speech_max_partial_result_changed"
         app:max="8"
         app:min="2"/>
+    <CheckBoxPreference
+        android:title="@string/settings_speech_disable_quick_commands_title"
+        android:key="@string/settings_speech_disable_quick_commands_key"
+        android:summary="@string/settings_speech_disable_quick_commands_summary"/>
 </PreferenceScreen>
