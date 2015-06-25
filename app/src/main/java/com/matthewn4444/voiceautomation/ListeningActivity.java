@@ -41,8 +41,8 @@ public class ListeningActivity extends AppCompatActivity implements
             mLightAutomator = new LightsAutomator(this);
         }
 
-        mPresenter = new UIPresenter(this);
-
+        setupCategories();
+        mPresenter = new UIPresenter(this, mCategories);
         setupSpeechController();
     }
 
@@ -153,22 +153,26 @@ public class ListeningActivity extends AppCompatActivity implements
             }
 
             if (speechControllerNeedsReset) {
-                mPresenter.speechHasReset();
                 mController.shutdown();
+                setupCategories();
                 setupSpeechController();
             }
         }
     }
 
     private void setupSpeechController() {
+        mPresenter.speechHasReset(mCategories);
+        mController = new SpeechController(this, mCategories);
+        mController.setSpeechListener(mPresenter);
+    }
+
+    private void setupCategories() {
         if (mCategories.isEmpty()) {
             if (mLightAutomator != null) {
                 addCategory(new LightsSpeechCategory(this, mLightAutomator.getLightController()));
             }
             addCategory(new MusicSpeechCategory(this));
         }
-        mController = new SpeechController(this, mCategories);
-        mController.setSpeechListener(mPresenter);
     }
 
     private void addCategory(SpeechCategory category) {

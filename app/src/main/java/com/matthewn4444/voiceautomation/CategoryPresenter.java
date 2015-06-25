@@ -57,7 +57,7 @@ public abstract class CategoryPresenter {
         return mMainTextColor;
     }
 
-    public void onShowPresenter(SpeechCategory category) {}
+    public void onShowPresenter(ViewGroup parent, SpeechCategory category) {}
 
     public void onHidePresenter(SpeechCategory category) {}
 

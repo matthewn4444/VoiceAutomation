@@ -72,6 +72,12 @@ public class LightsPresenter extends CategoryPresenter {
     }
 
     @Override
+    public void onShowPresenter(ViewGroup parent, SpeechCategory category) {
+        super.onShowPresenter(parent, category);
+        onUpdatePresenter(parent, category);
+    }
+
+    @Override
     public int getTextColor(SpeechCategory category) {
         LightsSpeechCategory cate = (LightsSpeechCategory) category;
         return cate.isOn() ? blendColors(mMainTextColor, mMainTextColorOff, cate.getBrightness() * 1.0f / 100.0f) : mMainTextColorOff;

@@ -408,7 +408,8 @@ public class MusicController implements MediaPlayer.OnCompletionListener {
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
-                long id = mSongList.get(mCurrentSong != null ? mCurrentSongPosition + 1 : mCurrentSongPosition).getArtId();
+                long id = mSongList.get(mCurrentSong != null || (mCurrentSongPosition + 1 >= mSongList.size())
+                        ? mCurrentSongPosition + 1 : mCurrentSongPosition).getArtId();
                 mCachedNextAlbumArt = getAlbumArt(id);
                 return null;
             }

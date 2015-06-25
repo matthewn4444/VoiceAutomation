@@ -59,6 +59,9 @@ public class SpeechController implements RecognitionListener {
     private long mPartialResultTimeLastChange;
     private String mLastPartialResult;
 
+    private String mLastQuickCommand;
+    private long mLastQuickCommandTime;
+
     private SoundPool mSoundPool;
     private int mSoundStartId;
     private int mSoundResultId;
@@ -177,6 +180,21 @@ public class SpeechController implements RecognitionListener {
                 if (res.isFinished) {
                     endSpeech(text);
                     return;
+                }
+            } else {
+                // Check quick commands for each category
+                boolean isSimilarToLastTime = mLastQuickCommand != null && text.startsWith(mLastQuickCommand);
+                long now = System.currentTimeMillis();
+                if (!isSimilarToLastTime || (now - mLastQuickCommandTime > 3000)) {
+                    mLastQuickCommandTime = now;
+                    mLastQuickCommand = text;
+                    for (String command: mCategories.keySet()) {
+                        SpeechCategory category = mCategories.get(command);
+                        if (category.onQuickCommand(text)) {
+                            endSpeech();
+                            return;
+                        }
+                    }
                 }
             }
             if (mListener != null) {
@@ -380,7 +398,7 @@ public class SpeechController implements RecognitionListener {
 
         mRecognizer.addKeywordSearch(KWS_SEARCH, mCommandFile);
 
-        // Add grammar searches
+        // Add grammar searches and setup quick commands
         for (String command: mCategories.keySet()) {
             SpeechCategory cate = mCategories.get(command);
             File grammerFile = new File(assetsDir, cate.getGrammerFileName());
@@ -407,13 +425,22 @@ public class SpeechController implements RecognitionListener {
         try {
             writeStream = mCtx.openFileOutput(CommandFileName, Context.MODE_PRIVATE);
             for (String key: mCategories.keySet()) {
-                writeStream.write((mCategories.get(key).getCommandGrammerLine() + "\n").getBytes());
+                SpeechCategory category = mCategories.get(key);
+                writeStream.write((category.getCommandGrammerLine() + "\n").getBytes());
+
+                // Add all the quick commands
+                Command[] qCommands = category.getQuickCommands();
+                if (qCommands != null) {
+                    for (Command command: qCommands) {
+                        writeStream.write((command.getCommand() + "\n").getBytes());
+                    }
+                }
             }
 
             // Add phrases to stop listening
-            writeStream.write((LOCK_PHRASE + " /" + SpeechCategory.DefaultThreshold + "/\n").getBytes());
-            writeStream.write((LOCK_PHRASE1 + " /" + SpeechCategory.DefaultThreshold + "/\n").getBytes());
-            writeStream.write((LOCK_PHRASE2 + " /" + SpeechCategory.DefaultThreshold + "/\n").getBytes());
+            writeStream.write((LOCK_PHRASE + " /" + Command.DefaultThreshold + "/\n").getBytes());
+            writeStream.write((LOCK_PHRASE1 + " /" + Command.DefaultThreshold + "/\n").getBytes());
+            writeStream.write((LOCK_PHRASE2 + " /" + Command.DefaultThreshold + "/\n").getBytes());
 
             commandFile = new File(mCtx.getFilesDir() + "/" + CommandFileName);
         } catch(IOException e) {
@@ -452,7 +479,9 @@ public class SpeechController implements RecognitionListener {
             new Handler(Looper.getMainLooper()).post(new Runnable() {
                 @Override
                 public void run() {
-                    speechFinishedWithResult(text);
+                    if (mCurrentCategory != null) {
+                        speechFinishedWithResult(text);
+                    }
                     switchSearch(newSearch);
                 }
             });

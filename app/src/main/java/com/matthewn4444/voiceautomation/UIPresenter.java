@@ -40,8 +40,9 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
     private Timer mHideTimer;
     private SecondCounter mSecondCounter;
     private boolean mCategoryImageIsShowing;
+    private boolean mIsReady;
 
-    public UIPresenter(Activity activity) {
+    public UIPresenter(Activity activity, HashMap<String, SpeechCategory> categories) {
         mActivity = activity;
         mUITextColor = activity.getResources().getColor(R.color.ui_text_color);
         mResultField = (TextView) activity.findViewById(R.id.result);
@@ -52,7 +53,7 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
         mSharedUI = new SharedMainUI((TextView) activity.findViewById(R.id.caption),
                 (TextView) activity.findViewById(R.id.subcaption),
                 activity.findViewById(R.id.background));
-        speechHasReset();
+        speechHasReset(categories);
 
         mMainImageSlideIn = AnimationUtils.loadAnimation(mActivity, R.anim.slide_in_main_image);
         mMainImageSlideOut = AnimationUtils.loadAnimation(mActivity, R.anim.slide_out_main_image);
@@ -80,6 +81,7 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
             if (mPriorityCategory != null) {
                 onUIStateChanged(mPriorityCategory);
             } else {
+                mIsReady = true;
                 mSharedUI.setText(R.string.prompt_ready);
             }
         } else {
@@ -161,6 +163,7 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
 
     @Override
     public void onUIStateChanged(SpeechCategory category) {
+        mPriorityCategory = category;
         category.handleMainUI(mSharedUI);
     }
 
@@ -173,9 +176,10 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
         mSecondCounter.start();
     }
 
-    public void speechHasReset() {
+    public void speechHasReset(HashMap<String, SpeechCategory> categories) {
         mActivity.getWindow().getDecorView().setBackgroundColor(Color.BLACK);
         mSharedUI.setText(R.string.prompt_setup);
+        mIsReady = false;
 
         for (SpeechCategory category : mCategoryViews.keySet()) {
             View view = mCategoryViews.get(category);
@@ -183,8 +187,23 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
             layout.removeAllViews();
             category.getPresenter().onDetachView(layout);
             mMainCategoryHolder.removeView(layout);
+            category.setOnStateChangedListener(null);
         }
         mCategoryViews.clear();
+
+        // Setup the view categories lookup
+        for (String command: categories.keySet()) {
+            SpeechCategory category = categories.get(command);
+            FrameLayout layout = new FrameLayout(mActivity);
+            mMainCategoryHolder.addView(layout);
+            mCategoryViews.put(category, category.getPresenter().onAttachView(layout, mSharedUI, category));
+            layout.setAlpha(0.0f);
+            category.setOnStateChangedListener(this);
+        }
+        mSharedUI.setTextColor(mUITextColor);
+
+        mPriorityCategory = null;
+        updatePriority();
     }
 
     public void immediatelyHideCategory() {
@@ -220,20 +239,17 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
         }
         if (cate != null) {
             if (mPriorityCategory != cate) {
-                if (mPriorityCategory != null) {
-                    mPriorityCategory.setOnStateChangedListener(null);
-                }
                 mPriorityCategory = cate;
-                mPriorityCategory.setOnStateChangedListener(UIPresenter.this);
                 onUIStateChanged(mPriorityCategory);
             }
         } else {
             if (mPriorityCategory != null) {
-                mPriorityCategory.setOnStateChangedListener(null);
                 mPriorityCategory = null;
             }
             mSharedUI.clearBackground();
-            mSharedUI.setText(R.string.prompt_ready);
+            if (mIsReady) {
+                mSharedUI.setText(R.string.prompt_ready);
+            }
         }
     }
 
@@ -280,15 +296,7 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
     private void showCategory(SpeechCategory category) {
         if (category != null) {
             View view = mCategoryViews.get(category);
-            FrameLayout layout;
-            if (view == null) {
-                layout = new FrameLayout(mActivity);
-                view = category.getPresenter().onAttachView(layout, mSharedUI, category);
-                mMainCategoryHolder.addView(layout);
-                mCategoryViews.put(category, view);
-            } else {
-                layout = (FrameLayout) view.getParent();
-            }
+            FrameLayout layout = (FrameLayout) view.getParent();
 
             // Show the main image
             layout.setAlpha(1.0f);
@@ -300,7 +308,7 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
             // Animate the text color back to normal
             CategoryPresenter presenter = category.getPresenter();
             mSharedUI.animateTextColor(mUITextColor, presenter.getTextColor(category));
-            presenter.onShowPresenter(category);
+            presenter.onShowPresenter(layout, category);
         }
     }
 

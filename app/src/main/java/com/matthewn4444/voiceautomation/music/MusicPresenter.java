@@ -117,8 +117,8 @@ public class MusicPresenter extends CategoryPresenter {
     }
 
     @Override
-    public void onShowPresenter(SpeechCategory category) {
-        super.onShowPresenter(category);
+    public void onShowPresenter(ViewGroup parent, SpeechCategory category) {
+        super.onShowPresenter(parent, category);
 
         updateState(category);
         mShuffleButton.startAnimation(mSlideInAnimation1);
