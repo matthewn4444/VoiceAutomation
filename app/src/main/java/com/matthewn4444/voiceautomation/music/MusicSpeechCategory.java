@@ -14,7 +14,7 @@ import com.matthewn4444.voiceautomation.SpeechController;
 public class MusicSpeechCategory extends SpeechCategory implements MusicController.OnStateChangedListener {
     private static final String TAG = "MusicSpeechCategory";
 
-    public static final String COMMAND_SHUFFLE_ALL_SONGS = "shuffle all songs";
+    public static final String COMMAND_SHUFFLE_ALL_MY_SONGS = "shuffle all my songs";
     public static final String COMMAND_PLAY_NEXT_SONG = "play next song";
     public static final String COMMAND_MUTE = "mute";
     public static final String COMMAND_UNMUTE = "unmute";
@@ -27,7 +27,7 @@ public class MusicSpeechCategory extends SpeechCategory implements MusicControll
     public static final String[] COMMANDS_PAUSE = {"pause", "pause music", "pause song"};
     public static final String[] COMMANDS_VOLUME_UP = {"volume up", "louder", "increase volume"};
     public static final String[] COMMANDS_VOLUME_DOWN = {"volume down", "quieter", "decrease volume", "lower volume"};
-    public static final String[] COMMANDS_SHUFFLE_ALL = {"shuffle all", COMMAND_SHUFFLE_ALL_SONGS};
+    public static final String[] COMMANDS_SHUFFLE_ALL = {"shuffle all", COMMAND_SHUFFLE_ALL_MY_SONGS, "shuffle all songs"};
     public static final String[] COMMANDS_SHUFFLE_ON = {"shuffle on", "enable shuffle"};
     public static final String[] COMMANDS_SHUFFLE_OFF = {"shuffle off", "disable shuffle"};
     public static final String[] COMMANDS_REPEAT_ON = {"repeat on", "disable repeat"};
@@ -35,10 +35,9 @@ public class MusicSpeechCategory extends SpeechCategory implements MusicControll
     public static final String[] COMMANDS_PLAY_AGAIN = {"start over", "play again", "play song again", "play this song again"};
 
     public static final Command[] QUICK_COMMANDS = {
-        new Command(COMMAND_SHUFFLE_ALL_SONGS, "1e-0.2f"),
-        new Command(COMMAND_PLAY_NEXT_SONG),
-        new Command(COMMANDS_PLAY_PREV_SONG[0], "1e-0.2f"),
-        new Command(COMMANDS_PLAY_PREV_SONG[1], "1e-0.001f"),
+            new Command(COMMAND_SHUFFLE_ALL_MY_SONGS, "1e-0.00000000000000000000000001f"),
+            new Command(COMMAND_PLAY_NEXT_SONG),
+            new Command(COMMANDS_PLAY_PREV_SONG[0], "1e-0.000000000000000000001f"),
     };
 
     private final MusicController mController;
@@ -48,7 +47,7 @@ public class MusicSpeechCategory extends SpeechCategory implements MusicControll
                 ctx.getString(R.string.settings_general_music_activation_command_key),
                 ctx.getString(R.string.assets_music_grammer_filename),
                 SpeechController.SpeechModel.DEFAULT,
-                ctx.getString(R.string.prompt_control_music), "1e-11");
+                ctx.getString(R.string.prompt_control_music), "1e-8");
         mController = new MusicController(ctx);
         mController.setOnSongChangedListener(this);
     }
@@ -120,12 +119,13 @@ public class MusicSpeechCategory extends SpeechCategory implements MusicControll
         if (!LazyPref.getBool(getContext(), R.string.settings_music_art_disable_key)) {
             albumArt = mController.getPlayingAlbumArt();
         }
-        ((MusicPresenter)getPresenter()).updateMainUI(ui, mController.getCurrentSong(), albumArt);
+        ((MusicPresenter) getPresenter()).updateMainUI(ui, mController.getCurrentSong(), albumArt);
     }
 
     @Override
     public boolean onQuickCommand(String command) {
-        if (command.equals(COMMAND_SHUFFLE_ALL_SONGS)) {
+        Toast.makeText(getContext(), command, Toast.LENGTH_SHORT).show();
+        if (command.equals(COMMAND_SHUFFLE_ALL_MY_SONGS)) {
             mController.shuffleAll();
         } else if (command.equals(COMMAND_PLAY_NEXT_SONG)) {
             mController.playNextSong();

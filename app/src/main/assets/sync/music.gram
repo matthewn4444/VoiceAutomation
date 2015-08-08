@@ -19,8 +19,6 @@ public <light> =    play |
                     decrease volume |
                     volume up |
                     volume down |
-                    unmute |
-                    mute |
                     louder |
                     quieter |
                     shuffle all |
@@ -37,4 +35,3 @@ public <light> =    play |
                     play again |
                     play song again |
                     play this song again;
- 
