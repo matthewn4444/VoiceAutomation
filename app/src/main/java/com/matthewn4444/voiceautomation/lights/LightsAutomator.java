@@ -115,10 +115,10 @@ public class LightsAutomator implements LocationHelper.OnLocationFoundListener {
         Calendar startTime = calculator.getOfficialSunsetCalendarForDate(Calendar.getInstance());
         Calendar endTime = calculator.getCivilSunsetCalendarForDate(Calendar.getInstance());
 
-        // The angle of the sun is 4 degrees from start to end, so use that time diff before sunset
+        // The angle of the sun is 8 degrees from start to end, so use that time diff before sunset
         // to detect when we should start turning the lights on, which is 4 degrees before sunset
         double timeDiffSec = ((endTime.getTimeInMillis() - startTime.getTimeInMillis()) * 1.0f / 1000);
-        startTime.add(Calendar.MINUTE, -(int) (timeDiffSec / 60));
+        startTime.add(Calendar.MINUTE, -(int) (timeDiffSec * 2 / 60));
 
         timeDiffSec = ((endTime.getTimeInMillis() - startTime.getTimeInMillis()) * 1.0f / 1000);
         int secPerInterval = (int)Math.ceil(timeDiffSec / getScheduleNumberOfIntervals(ctx));
