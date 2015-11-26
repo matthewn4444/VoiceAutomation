@@ -6,8 +6,8 @@
 
     <Switch
         android:layout_centerVertical="true"
-        android:paddingRight="@dimen/abc_action_bar_default_padding_material"
-        android:paddingEnd="@dimen/abc_action_bar_default_padding_material"
+        android:paddingRight="@dimen/abc_action_bar_default_padding_end_material"
+        android:paddingEnd="@dimen/abc_action_bar_default_padding_end_material"
         android:layout_marginEnd="@dimen/abc_action_bar_overflow_padding_end_material"
         android:layout_marginRight="@dimen/abc_action_bar_overflow_padding_end_material"
         android:id="@+id/switchForActionBar"
