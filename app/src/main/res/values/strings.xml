@@ -4,9 +4,11 @@
     <!-- Messages -->
     <string name="prompt_ask_turn_on_location">In order to use light automation, we need to enable location get information about the sunset time, would you like to go and enable location?</string>
     <string name="location_is_unavailable">Location is unavailable, therefore your lights will not be automatically turned on.</string>
+    <string name="permissions_requested">We need these permissions to use this app. Please allow it.</string>
 
     <!-- Speech input prompt messages -->
     <string name="prompt_setup">Preparing&#8230;</string>
+    <string name="prompt_no_permissions">No Speech Permissions</string>
     <string name="prompt_ready">Ready for commands</string>
     <string name="prompt_adjust_lights">Enter light command</string>
     <string name="prompt_control_music">Enter music command</string>

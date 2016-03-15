@@ -1,7 +1,13 @@
 package com.matthewn4444.voiceautomation;
 
+import android.Manifest;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.view.WindowManager;
@@ -11,18 +17,26 @@ import com.matthewn4444.voiceautomation.lights.LightsSpeechCategory;
 import com.matthewn4444.voiceautomation.music.MusicSpeechCategory;
 import com.matthewn4444.voiceautomation.settings.Settings;
 
+import java.util.ArrayList;
 import java.util.HashMap;
-
+import java.util.List;
 
 public class ListeningActivity extends AppCompatActivity implements
-        View.OnClickListener {
+        View.OnClickListener, ActivityCompat.OnRequestPermissionsResultCallback {
     private static final int REQUEST_CODE_SETTINGS = 1;
     private static final int SettingsButtonId = R.id.settings_button;
+
+    private static final String[] NeededPermissions = {
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.RECORD_AUDIO
+    };
 
     private UIPresenter mPresenter;
     private HashMap<String, SpeechCategory> mCategories = new HashMap<>();
     private SpeechController mController;
     private LightsAutomator mLightAutomator;
+    private MusicSpeechCategory mMusicController;
 
     // Track settings so we know what changed
     private boolean mEnableLights;
@@ -35,25 +49,22 @@ public class ListeningActivity extends AppCompatActivity implements
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         findViewById(SettingsButtonId).setOnClickListener(this);
-
-        mEnableLights = LightsSpeechCategory.areLightsEnabled(this);
-        if (mEnableLights) {
-            mLightAutomator = new LightsAutomator(this);
-        }
-
-        setupCategories();
         mPresenter = new UIPresenter(this, mCategories);
-        setupSpeechController();
+        checkForPermissions();
     }
 
     @Override
     protected void onPause() {
-        mController.pause();
+        if (mController != null) {
+            mController.pause();
+        }
         if (mLightAutomator != null) {
             mLightAutomator.onPause();
         }
-        mPresenter.onPause();
-        mPresenter.immediatelyHideCategory();
+        if (mPresenter != null) {
+            mPresenter.onPause();
+            mPresenter.immediatelyHideCategory();
+        }
         for (String key: mCategories.keySet()) {
             mCategories.get(key).pause();
         }
@@ -66,8 +77,12 @@ public class ListeningActivity extends AppCompatActivity implements
         if (mLightAutomator != null) {
             mLightAutomator.onResume();
         }
-        mPresenter.onResume();
-        mController.resume();
+        if (mPresenter != null) {
+            mPresenter.onResume();
+        }
+        if (mController != null) {
+            mController.resume();
+        }
         for (String key: mCategories.keySet()) {
             mCategories.get(key).resume();
         }
@@ -76,7 +91,9 @@ public class ListeningActivity extends AppCompatActivity implements
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mController.shutdown();
+        if (mController != null) {
+            mController.shutdown();
+        }
     }
 
     @Override
@@ -94,7 +111,7 @@ public class ListeningActivity extends AppCompatActivity implements
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
+            super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == REQUEST_CODE_SETTINGS) {
             // Check if any of the speech categories has changed their commands
@@ -153,26 +170,83 @@ public class ListeningActivity extends AppCompatActivity implements
             }
 
             if (speechControllerNeedsReset) {
-                mController.shutdown();
                 setupCategories();
                 setupSpeechController();
             }
         }
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        setupCategories();
+        setupSpeechController();
+    }
+
+    private void setupLights() {
+        if (hasPermission(Manifest.permission.ACCESS_COARSE_LOCATION)) {
+            mEnableLights = LightsSpeechCategory.areLightsEnabled(this);
+            if (mEnableLights && mLightAutomator == null) {
+                mLightAutomator = new LightsAutomator(this);
+                addCategory(new LightsSpeechCategory(this, mLightAutomator.getLightController()));
+            }
+        }
+    }
+
+    private void setupMusic() {
+        if (hasPermission(Manifest.permission.READ_EXTERNAL_STORAGE)) {
+            if (mMusicController == null) {
+                mMusicController = new MusicSpeechCategory(this);
+                addCategory(mMusicController);
+            }
+        }
+    }
+
+    private void checkForPermissions() {
+        final List<String> requestPermissions = new ArrayList<>();
+        for (String permission: NeededPermissions) {
+            if (!hasPermission(permission)) {
+                requestPermissions.add(permission);
+            }
+        }
+        if (!requestPermissions.isEmpty()) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, requestPermissions.get(0))) {
+                new AlertDialog.Builder(this)
+                        .setCancelable(false )
+                        .setMessage(R.string.permissions_requested)
+                        .setNeutralButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                ActivityCompat.requestPermissions(ListeningActivity.this,
+                                        requestPermissions.toArray(new String[requestPermissions.size()]), 1);
+                            }
+                        })
+                        .show();
+            } else {
+                ActivityCompat.requestPermissions(this, requestPermissions.toArray(new String[requestPermissions.size()]), 1);
+            }
+        }
+        setupCategories();
+        setupSpeechController();
+    }
+
     private void setupSpeechController() {
         mPresenter.speechHasReset(mCategories);
-        mController = new SpeechController(this, mCategories);
-        mController.setSpeechListener(mPresenter);
+        if (hasPermission(Manifest.permission.RECORD_AUDIO)) {
+            if (mController != null) {
+                mController.shutdown();
+            }
+            mController = new SpeechController(this, mCategories);
+            mController.setSpeechListener(mPresenter);
+        }
     }
 
     private void setupCategories() {
-        if (mCategories.isEmpty()) {
-            if (mLightAutomator != null) {
-                addCategory(new LightsSpeechCategory(this, mLightAutomator.getLightController()));
-            }
-            addCategory(new MusicSpeechCategory(this));
-        }
+        setupLights();
+        setupMusic();
+    }
+
+    private boolean hasPermission(String permission) {
+        return ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED;
     }
 
     private void addCategory(SpeechCategory category) {

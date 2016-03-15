@@ -1,7 +1,10 @@
 package com.matthewn4444.voiceautomation;
 
+import android.Manifest;
 import android.app.Activity;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.support.v4.content.ContextCompat;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
@@ -178,7 +181,11 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
 
     public void speechHasReset(HashMap<String, SpeechCategory> categories) {
         mActivity.getWindow().getDecorView().setBackgroundColor(Color.BLACK);
-        mSharedUI.setText(R.string.prompt_setup);
+        if (ContextCompat.checkSelfPermission(mActivity, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            mSharedUI.setText(R.string.prompt_setup);
+        } else {
+            mSharedUI.setText(R.string.prompt_no_permissions);
+        }
         mIsReady = false;
 
         for (SpeechCategory category : mCategoryViews.keySet()) {
