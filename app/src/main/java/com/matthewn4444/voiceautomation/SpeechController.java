@@ -1,9 +1,11 @@
 package com.matthewn4444.voiceautomation;
 
 import android.content.Context;
+import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -264,7 +266,7 @@ public class SpeechController implements RecognitionListener {
 
     private void playSoundEffect(int id) {
         if (mSoundPool != null) {
-            mSoundPool.play(id, 1, 1, 0, 1, 1);
+            mSoundPool.play(id, 1, 1, 1, 0, 1);
         }
     }
 
@@ -492,7 +494,17 @@ public class SpeechController implements RecognitionListener {
 
     private void setupSoundEffects() {
         if (mSoundPool == null) {
-            mSoundPool = new SoundPool(3, AudioManager.STREAM_MUSIC, 0);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                AudioAttributes attr = new AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_VOICE_COMMUNICATION_SIGNALLING)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build();
+                mSoundPool = new SoundPool.Builder()
+                        .setAudioAttributes(attr)
+                        .build();
+            } else {
+                mSoundPool = new SoundPool(3, AudioManager.STREAM_MUSIC, 0);
+            };
             mSoundStartId = mSoundPool.load(mCtx, R.raw.listen_start, 1);
             mSoundResultId = mSoundPool.load(mCtx, R.raw.listen_result, 1);
             mSoundFailId = mSoundPool.load(mCtx, R.raw.listen_fail, 1);
