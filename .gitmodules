@@ -1,0 +1,3 @@
+[submodule "lifx-sdk"]
+	path = lifx-sdk
+	url = git@github.com:matthewn4444/lifx-sdk.git

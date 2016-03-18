@@ -1,6 +1,8 @@
 package com.matthewn4444.voiceautomation.lights;
 
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.widget.Toast;
 
 import com.matthewn4444.voiceautomation.LazyPref;
@@ -12,6 +14,7 @@ import java.security.InvalidParameterException;
 
 public class LightsSpeechCategory extends SpeechCategory {
     private final ILightController mLightController;
+    private final ConnectivityManager mConManager;
 
     // Commands
     private static final String COMMAND_BRIGHTER = "brighter";
@@ -43,6 +46,7 @@ public class LightsSpeechCategory extends SpeechCategory {
                 SpeechModel.DEFAULT,
                 ctx.getString(R.string.prompt_adjust_lights));
         mLightController = controller;
+        mConManager = ((ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE));
     }
 
     public static boolean areLightsEnabled(Context ctx) {
@@ -103,7 +107,8 @@ public class LightsSpeechCategory extends SpeechCategory {
 
     @Override
     public boolean isAvailable() {
-        return mLightController.isAvailable();
+        return mLightController.isAvailable() && isWifiConnected()
+                && LightsAutomator.isAutomationAllowedBySSID(getContext());     // TODO Temp till lifx fixes lan
     }
 
     private int getDimBrightenStep() {
@@ -248,5 +253,10 @@ public class LightsSpeechCategory extends SpeechCategory {
             }
         }
         return Math.min(sum, 100);
+    }
+
+    private boolean isWifiConnected() {
+        NetworkInfo info = mConManager.getActiveNetworkInfo();
+        return info.getType() == ConnectivityManager.TYPE_WIFI && info.isConnected();
     }
 }

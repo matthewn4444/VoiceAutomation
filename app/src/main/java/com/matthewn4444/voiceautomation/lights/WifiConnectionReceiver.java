@@ -18,6 +18,7 @@ public class WifiConnectionReceiver extends BroadcastReceiver {
     private static final int LightsDisconnectTimeout = 8000;    // Disconnect 8 sec after connected
     private SharedPreferences mPref;
     private String mLastDisconnectionSettingsKey;
+    private Handler mHandler = new Handler();
 
     private static final int LastConnectionThresholdSec = 1;   // 1 sec to avoid multiple events
     private static final int StartAutomationThresholdMin = 10; // Start automation if wifi was off for more than 10 min and then back on
@@ -78,7 +79,7 @@ public class WifiConnectionReceiver extends BroadcastReceiver {
                 final LightsAutomator automator = new LightsAutomator(context, true);
 
                 // Safe way to make sure that the lights are adjusted correctly due to network latency
-                new Handler().postDelayed(new Runnable() {
+                mHandler.postDelayed(new Runnable() {
                     @Override
                     public void run() {
                         automator.getLightController().disconnect();

@@ -16,7 +16,8 @@ import java.util.Calendar;
 public class LightsAutomatorReceiver extends BroadcastReceiver {
     public static final String TAG = "LightsAutomatorReceiver";
 
-    private static final int DisconnectLaterTimeout = 5000;
+    private static final int DisconnectLaterTimeout = 9000;
+    private Handler mHandler = new Handler();
 
     @Override
     public void onReceive(final Context context, Intent intent) {
@@ -98,8 +99,7 @@ public class LightsAutomatorReceiver extends BroadcastReceiver {
         lights.turnOn();
 
         // Disconnect the lights later because if we do it now, it wont change the lights
-        Handler a = new Handler();
-        a.postDelayed(new Runnable() {
+        mHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 lights.disconnect();
