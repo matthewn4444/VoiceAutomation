@@ -1,11 +1,14 @@
 package com.matthewn4444.voiceautomation.lights;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 
 import com.matthewn4444.voiceautomation.LazyPref;
@@ -22,8 +25,11 @@ public class LightsAutomatorReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(final Context context, Intent intent) {
         // Since the preference is not enabled, we should cancel and not automate the lights
+        // Also cancel if you do not have permissions to location
         if (!LightsAutomator.isSunsetAutomationEnabled(context)
-                || !LightsSpeechCategory.areLightsEnabled(context)) {
+                || !LightsSpeechCategory.areLightsEnabled(context)
+                || ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
             LightsAutomator.cancelAutomator(context);
             return;
         }

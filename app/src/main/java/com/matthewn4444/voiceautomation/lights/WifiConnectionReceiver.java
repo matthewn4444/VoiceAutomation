@@ -1,14 +1,17 @@
 package com.matthewn4444.voiceautomation.lights;
 
+import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.support.v4.content.ContextCompat;
 
 import com.matthewn4444.voiceautomation.R;
 
@@ -25,7 +28,9 @@ public class WifiConnectionReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (!LightsSpeechCategory.areLightsEnabled(context)) {
+        if (!LightsSpeechCategory.areLightsEnabled(context)
+                || ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED) {
             return;
         }
 
