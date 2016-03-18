@@ -50,6 +50,9 @@ public class LocationHelper implements GoogleApiClient.ConnectionCallbacks,
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
                 .build();
+        if (hasLocationEnabled()) {
+            mApiClient.connect();
+        }
     }
 
     public static boolean isLocationHardcoded(Context context) {
@@ -122,7 +125,7 @@ public class LocationHelper implements GoogleApiClient.ConnectionCallbacks,
                 }
             }
         }
-        if (hasLocationEnabled()) {
+        if (!mApiClient.isConnected() && hasLocationEnabled()) {
             mApiClient.connect();
         }
     }
