@@ -9,6 +9,7 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.preference.PreferenceManager;
 import android.util.Log;
+import android.util.Pair;
 
 import com.luckycatlabs.sunrisesunset.SunriseSunsetCalculator;
 import com.matthewn4444.voiceautomation.LazyPref;
@@ -95,6 +96,20 @@ public class LightsAutomator implements LocationHelper.OnLocationFoundListener {
         alarmMgr.cancel(in);
     }
 
+    static Pair<Calendar, Calendar> getAutomatedSunsetTimes(Location location) {
+        final SunriseSunsetCalculator calculator = new SunriseSunsetCalculator(
+                new com.luckycatlabs.sunrisesunset.dto.Location(
+                        location.getLatitude(), location.getLongitude()), Calendar.getInstance().getTimeZone());
+        Calendar startTime = calculator.getOfficialSunsetCalendarForDate(Calendar.getInstance());
+        Calendar endTime = calculator.getCivilSunsetCalendarForDate(Calendar.getInstance());
+
+        // The angle of the sun is 8 degrees from start to end, so use that time diff before sunset
+        // to detect when we should start turning the lights on, which is 4 degrees before sunset
+        double timeDiffSec = ((endTime.getTimeInMillis() - startTime.getTimeInMillis()) * 1.0f / 1000);
+        startTime.add(Calendar.MINUTE, -(int) (timeDiffSec * 2 / 60));
+        return Pair.create(startTime, endTime);
+    }
+
     static void scheduleSunsetGradualLightsOn(Context ctx, Location location) {
         Calendar now = Calendar.getInstance();
 
@@ -109,18 +124,11 @@ public class LightsAutomator implements LocationHelper.OnLocationFoundListener {
         }
 
         // Calculate the intervals of each brightness step
-        final SunriseSunsetCalculator calculator = new SunriseSunsetCalculator(
-                new com.luckycatlabs.sunrisesunset.dto.Location(
-                        location.getLatitude(), location.getLongitude()), now.getTimeZone());
-        Calendar startTime = calculator.getOfficialSunsetCalendarForDate(Calendar.getInstance());
-        Calendar endTime = calculator.getCivilSunsetCalendarForDate(Calendar.getInstance());
+        Pair<Calendar, Calendar> automationTimes = getAutomatedSunsetTimes(location);
+        Calendar startTime = automationTimes.first;
+        Calendar endTime = automationTimes.second;
 
-        // The angle of the sun is 8 degrees from start to end, so use that time diff before sunset
-        // to detect when we should start turning the lights on, which is 4 degrees before sunset
         double timeDiffSec = ((endTime.getTimeInMillis() - startTime.getTimeInMillis()) * 1.0f / 1000);
-        startTime.add(Calendar.MINUTE, -(int) (timeDiffSec * 2 / 60));
-
-        timeDiffSec = ((endTime.getTimeInMillis() - startTime.getTimeInMillis()) * 1.0f / 1000);
         int secPerInterval = (int)Math.ceil(timeDiffSec / getScheduleNumberOfIntervals(ctx));
 
         // Schedule the alarms
@@ -281,21 +289,25 @@ public class LightsAutomator implements LocationHelper.OnLocationFoundListener {
     }
 
     private int autoBrightnessForNow() {
+        Pair<Calendar, Calendar> automationTimes = getAutomatedSunsetTimes(mLocation);
+        Calendar startSunsetTime = automationTimes.first;
+        Calendar endSunsetTime = automationTimes.second;
+
         Calendar now = Calendar.getInstance();
-        Calendar sunset = calculateSunsetTime();
         Calendar night = calculateNightTime();
         Calendar lateNightTime = getLateNightTime();
 
         if (now.after(night) || now.before(lateNightTime)) {
             // It is after the night time or before the late night set in settings, so max brightness
             return getMaxBrightness(mCtx);
-        } else if (now.before(sunset)) {
+        } else if (now.before(startSunsetTime)) {
             // It is still daylight, so no brightness
             return 0;
         } else {
             // Calculate the brightness since we are in between the sunset and night time
-            long total = night.getTimeInMillis() - sunset.getTimeInMillis();
-            long currently = now.getTimeInMillis() - sunset.getTimeInMillis();
+            long total = endSunsetTime.getTimeInMillis() - startSunsetTime.getTimeInMillis();
+            long currently = now.getTimeInMillis() - startSunsetTime.getTimeInMillis();
+
             return (int)((currently * 1.0f / total) * getMaxBrightness(mCtx));
         }
     }
@@ -323,13 +335,6 @@ public class LightsAutomator implements LocationHelper.OnLocationFoundListener {
     static int calculateInterval(Calendar now, long startTime, int secPerInterval) {
         double timePassedFromStart = ((now.getTimeInMillis() - startTime) * 1.0f / 1000);
         return (int)(timePassedFromStart / secPerInterval) + 1;
-    }
-
-    private Calendar calculateSunsetTime() {
-        Calendar night = calculateNightTime();
-        Calendar sunset = mCalculator.getOfficialSunsetCalendarForDate(Calendar.getInstance());
-        sunset.add(Calendar.MILLISECOND, -(int)(night.getTimeInMillis() - sunset.getTimeInMillis()));
-        return sunset;
     }
 
     private Calendar calculateNightTime() {
