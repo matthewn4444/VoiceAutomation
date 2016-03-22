@@ -161,12 +161,6 @@ public class ListeningActivity extends AppCompatActivity implements
                 if (newSunsetSteps != mSettingsLastSunsetSteps) {
                     mLightAutomator.reschedule();
                 }
-
-                // If location was not available before because was not on and then went to settings to
-                // hardcode the location, then we should try again with new location
-                if (!mLightAutomator.isLocationReady() && LocationHelper.isLocationHardcoded(this)) {
-                    mLightAutomator.retryLocation();
-                }
             }
 
             if (speechControllerNeedsReset) {

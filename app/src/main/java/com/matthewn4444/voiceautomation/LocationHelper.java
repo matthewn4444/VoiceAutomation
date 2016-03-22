@@ -1,39 +1,40 @@
 package com.matthewn4444.voiceautomation;
 
+import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.provider.Settings;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
 public class LocationHelper implements GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener {
+        GoogleApiClient.OnConnectionFailedListener, LocationListener {
     private static final String TAG = "LocationHelper";
     private static final String HighAccuracyProvider = LocationManager.GPS_PROVIDER;
     private static final String LowAccuracyProvider = LocationManager.NETWORK_PROVIDER;
+    private static final int DefaultLocationUpdateInterval = 4 * 1000;
 
     private final Context mCtx;
     private final String mProvider;
     private final LocationManager mManager;
 
-    private Location mLocation;
     private boolean mAskToEnableLocation;
-    private OnLocationFoundListener mFoundListener;
+    private LocationListener mPendingListener;
+    private LocationListener mClientListener;
     private GoogleApiClient mApiClient;
-
-    public interface OnLocationFoundListener {
-        void onLocationFound(Location location);
-    }
+    private LocationRequest mRequest;
 
     public LocationHelper(Context context) {
         this(context, false);
@@ -53,10 +54,10 @@ public class LocationHelper implements GoogleApiClient.ConnectionCallbacks,
         if (hasLocationEnabled()) {
             mApiClient.connect();
         }
-    }
 
-    public static boolean isLocationHardcoded(Context context) {
-        return LazyPref.getBool(context, R.string.setting_light_location_hardcode_location_key);
+        mRequest = new LocationRequest();
+        mRequest.setPriority(LocationRequest.PRIORITY_LOW_POWER);
+        mRequest.setInterval(DefaultLocationUpdateInterval);
     }
 
     public boolean hasLocationEnabled() {
@@ -68,43 +69,53 @@ public class LocationHelper implements GoogleApiClient.ConnectionCallbacks,
         mCtx.startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
     }
 
-    public void queryLocation(final OnLocationFoundListener listener) {
-        // User selected to hardcode location, so we send back that data
-        if (isLocationHardcoded(mCtx)) {
-            listener.onLocationFound(getCacheLocation());
-            return;
-        }
-
-        if (hasLocationEnabled()) {
-            if (mLocation != null) {
-                internalQueryLocation();
-                listener.onLocationFound(mLocation);
-            } else {
-                mFoundListener = listener;
-            }
-        } else {
-            new AlertDialog.Builder(mCtx)
-                    .setMessage(R.string.prompt_ask_turn_on_location)
-                    .setTitle(R.string.app_name)
-                    .setNegativeButton(android.R.string.no, null)
-                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            openLocationSettings();
-                        }
-                    }).show();
-        }
+    public void queryLocation(LocationListener listener) {
+        queryLocation(listener, false);
     }
 
-    private void internalQueryLocation() {
-        try {
-            Location location = LocationServices.FusedLocationApi.getLastLocation(mApiClient);
-            if (location != null && location.getLatitude() != 0 && location.getLongitude() != 0) {
-                mLocation = location;
-                Log.i("lunch", "foudn location to " + location.getLatitude() + ", " + location.getLongitude());
+    public void queryLocation(LocationListener listener, boolean silent) {
+        if (listener != null) {
+            // If user has location setup
+            if (!hasLocationEnabled()) {
+                if (silent) {
+                    // Only for automation we will not prompt the user to turn on location, return null
+                    listener.onLocationChanged(null);
+                } else {
+                    // Show the dialog
+                    mPendingListener = listener;
+                    new AlertDialog.Builder(mCtx)
+                            .setMessage(R.string.prompt_ask_turn_on_location)
+                            .setTitle(R.string.app_name)
+                            .setCancelable(false)
+                            .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    mPendingListener = null;
+                                }
+                            })
+                            .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    openLocationSettings();
+                                }
+                            }).show();
+                }
+            } else if (ActivityCompat.checkSelfPermission(mCtx, Manifest.permission.ACCESS_FINE_LOCATION)
+                        == PackageManager.PERMISSION_GRANTED
+                    || ActivityCompat.checkSelfPermission(mCtx, Manifest.permission.ACCESS_COARSE_LOCATION)
+                        == PackageManager.PERMISSION_GRANTED) {
+                // Must have permissions to access location
+                mPendingListener = listener;
+                if (mApiClient.isConnected()) {
+                    LocationServices.FusedLocationApi.requestLocationUpdates(mApiClient, mRequest, this);
+                    mClientListener = listener;
+                } else {
+                    // Not connected yet, wait for it to be ready...
+                    mPendingListener = listener;
+                }
+            } else {
+                listener.onLocationChanged(null);
             }
-        } catch (SecurityException e) {
-            e.printStackTrace();
         }
     }
 
@@ -120,7 +131,9 @@ public class LocationHelper implements GoogleApiClient.ConnectionCallbacks,
                 if (mAskToEnableLocation) {
                     mAskToEnableLocation = false;
                     if (hasLocationEnabled()) {
-                        queryLocation(mFoundListener);
+                        LocationListener listener = mPendingListener;
+                        mPendingListener = null;
+                        queryLocation(listener);
                     }
                 }
             }
@@ -131,51 +144,34 @@ public class LocationHelper implements GoogleApiClient.ConnectionCallbacks,
     }
 
     public Location getLastLocation() {
-        if (isLocationHardcoded(mCtx)) {
-            return getCacheLocation();
-        }
-
-        if (mLocation == null) {
-            internalQueryLocation();
-        }
-        return mLocation;
-    }
-
-    public void cacheLocation() {
-        if (mLocation != null) {
-            double latitude = mLocation.getLatitude();
-            double longitude = mLocation.getLongitude();
-            if (latitude != 0 && longitude != 0) {
-                SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(mCtx);
-                pref.edit()
-                        .putString(mCtx.getString(R.string.settings_key_cached_latitude), latitude + "")
-                        .putString(mCtx.getString(R.string.settings_key_cached_longitude), longitude + "")
-                        .apply();
+        if (hasLocationEnabled()) {
+            try {
+                Location location = LocationServices.FusedLocationApi.getLastLocation(mApiClient);
+                if (location != null && location.getLatitude() != 0 && location.getLongitude() != 0) {
+                    return location;
+                }
+            } catch (SecurityException e) {
+                e.printStackTrace();
             }
         }
+        return null;
     }
 
-    public Location getCacheLocation() {
-        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(mCtx);
-        String latitudeStr = pref.getString(mCtx.getString(R.string.settings_key_cached_latitude), null);
-        String longitudeStr = pref.getString(mCtx.getString(R.string.settings_key_cached_longitude), null);
-
-        if (latitudeStr == null && longitudeStr == null) {
-            return null;
-        } else {
-            Location location = new Location("");
-            location.setLatitude(  latitudeStr != null ? Float.parseFloat(latitudeStr)  : 0);
-            location.setLongitude(longitudeStr != null ? Float.parseFloat(longitudeStr) : 0);
-            return location;
+    @Override
+    public void onLocationChanged(Location location) {
+        LocationServices.FusedLocationApi.removeLocationUpdates(mApiClient, this);
+        if (mClientListener != null) {
+            mClientListener.onLocationChanged(location);
+            mClientListener = null;
         }
     }
 
     @Override
     public void onConnected(Bundle bundle) {
-        internalQueryLocation();
-        if (mFoundListener != null) {
-            mFoundListener.onLocationFound(mLocation);
-            mFoundListener = null;
+        if (mPendingListener != null) {
+            LocationListener listener = mPendingListener;
+            mPendingListener = null;
+            queryLocation(listener);
         }
     }
 

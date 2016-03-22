@@ -11,6 +11,7 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 import android.util.Pair;
 
+import com.google.android.gms.location.LocationListener;
 import com.luckycatlabs.sunrisesunset.SunriseSunsetCalculator;
 import com.matthewn4444.voiceautomation.LazyPref;
 import com.matthewn4444.voiceautomation.LocationHelper;
@@ -18,7 +19,7 @@ import com.matthewn4444.voiceautomation.R;
 
 import java.util.Calendar;
 
-public class LightsAutomator implements LocationHelper.OnLocationFoundListener {
+public class LightsAutomator implements LocationListener {
     public static final String TAG = "LightsAutomator";
     public static final String ExtraStartTime = "intent.extra.start.time";
     public static final String ExtraIntervalSec = "intent.extra.interval.sec";
@@ -62,24 +63,12 @@ public class LightsAutomator implements LocationHelper.OnLocationFoundListener {
 
         // Setup location
         mLocationHelper = new LocationHelper(ctx);
-        if (mLocationHelper.hasLocationEnabled() || !silent) {
-            mLocationHelper.queryLocation(this);
-        } else {
-            // Get the last saved location if silent
-            Location location = mLocationHelper.getCacheLocation();
-            if (location != null) {
-                mLocation = location;
-                init();
-            } else {
-                Log.w(TAG, "Connected to wifi but unable to set lights because no location is available.");
-            }
-        }
+        mLocationHelper.queryLocation(this, silent);
     }
 
     @Override
-    public void onLocationFound(Location location) {
+    public void onLocationChanged(Location location) {
         if (location != null) {
-            mLocationHelper.cacheLocation();
             mLocation = location;
             init();
         } else {
