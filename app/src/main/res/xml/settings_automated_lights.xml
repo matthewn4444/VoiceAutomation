@@ -77,19 +77,19 @@
             app:emptyText="@string/setting_light_auto_enter_ssid_default_summary"/>
 
         <CheckBoxPreference
-            android:title="@string/setting_light_location_hardcode_location_title"
-            android:key="@string/setting_light_location_hardcode_location_key"
-            android:summary="@string/setting_light_location_hardcode_location_summary"/>
+            android:title="@string/setting_light_location_home_location_title"
+            android:key="@string/setting_light_location_home_location_key"
+            android:summary="@string/setting_light_location_home_location_summary"/>
         <com.matthewn4444.voiceautomation.settings.preferences.SummaryEditTextPreference
             android:title="@string/setting_light_location_latitude_title"
-            android:key="@string/settings_key_cached_latitude"
-            android:dependency="@string/setting_light_location_hardcode_location_key"
+            android:key="@string/settings_key_home_latitude"
+            android:dependency="@string/setting_light_location_home_location_key"
             android:inputType="numberDecimal|numberSigned"
             app:emptyText="@string/setting_light_location_field_default_summary"/>
         <com.matthewn4444.voiceautomation.settings.preferences.SummaryEditTextPreference
             android:title="@string/setting_light_location_longitude_title"
-            android:key="@string/settings_key_cached_longitude"
-            android:dependency="@string/setting_light_location_hardcode_location_key"
+            android:key="@string/settings_key_home_longitude"
+            android:dependency="@string/setting_light_location_home_location_key"
             android:inputType="numberDecimal|numberSigned"
             app:emptyText="@string/setting_light_location_field_default_summary"/>
 

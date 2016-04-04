@@ -18,9 +18,11 @@ import com.matthewn4444.voiceautomation.R;
 import java.util.Calendar;
 
 public class WifiConnectionReceiver extends BroadcastReceiver {
+    private static final String TAG = "WifiConnectionReceiver";
     private static final int LightsDisconnectTimeout = 8000;    // Disconnect 8 sec after connected
     private SharedPreferences mPref;
     private String mLastDisconnectionSettingsKey;
+    private String mLastSSIDKey;
     private Handler mHandler = new Handler();
 
     private static final int LastConnectionThresholdSec = 1;   // 1 sec to avoid multiple events
@@ -36,6 +38,7 @@ public class WifiConnectionReceiver extends BroadcastReceiver {
 
         mPref = PreferenceManager.getDefaultSharedPreferences(context);
         mLastDisconnectionSettingsKey = context.getString(R.string.settings_key_last_wifi_time_disconnection);
+        mLastSSIDKey = context.getString(R.string.settings_key_last_wifi_ssid);
 
         // Detect between connect and disconnect, only fire the first event
         if(intent.getAction().equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)) {
@@ -66,6 +69,21 @@ public class WifiConnectionReceiver extends BroadcastReceiver {
     }
 
     private void onConnection(final Context context, Intent intent) {
+        // Record last ssid if exists
+        LightsOffService.cancelAll(context);
+        String ssid = LightsAutomator.getCurrentSSID(context);
+        if (ssid == null) {
+            return;
+        }
+
+        // Turn off lights on connect if new ssid is not the same as last time which is the home ssid
+        if (LightsAutomator.isInAutomationStateTurnOffLights(context)) {
+            if (!ssid.equals(mPref.getString(mLastSSIDKey, null))) {
+                LightsOffService.turnOffLightsIfAllowed(context);
+            }
+        }
+        mPref.edit().putString(mLastSSIDKey, ssid).apply();
+
         if (LightsAutomator.isAutomationAllowedBySSID(context)) {
             // Once the wifi was off for more than 10 min and then connected, we can start getting
             // a location and start the light automation
@@ -95,6 +113,12 @@ public class WifiConnectionReceiver extends BroadcastReceiver {
     }
 
     private void onDisconnect(Context context, Intent intent) {
+        // See if we should turn off lights, more details in LightsAutomator class
+        if (LightsAutomator.isInAutomationStateTurnOffLights(context)) {
+            LightsOffService.turnOffLightsIfAllowed(context);
+        }
+
+        // Save settings about this disconnect
         mPref.edit()
                 .putLong(mLastDisconnectionSettingsKey, Calendar.getInstance().getTimeInMillis())
                 .apply();

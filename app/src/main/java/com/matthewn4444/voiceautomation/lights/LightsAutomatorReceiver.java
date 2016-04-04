@@ -83,6 +83,15 @@ public class LightsAutomatorReceiver extends BroadcastReceiver {
                             lights.disconnect();
                         }
                     }
+
+                    @Override
+                    public void onCommandFinished() {
+                    }
+
+                    @Override
+                    public void onError(Exception e) {
+
+                    }
                 });
                 lights.connect();
                 if (lights.isAvailable()) {

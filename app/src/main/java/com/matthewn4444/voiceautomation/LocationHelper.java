@@ -56,7 +56,7 @@ public class LocationHelper implements GoogleApiClient.ConnectionCallbacks,
         }
 
         mRequest = new LocationRequest();
-        mRequest.setPriority(LocationRequest.PRIORITY_LOW_POWER);
+        mRequest.setPriority(useHighAccuracy ? LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY : LocationRequest.PRIORITY_LOW_POWER);
         mRequest.setInterval(DefaultLocationUpdateInterval);
     }
 
@@ -159,10 +159,12 @@ public class LocationHelper implements GoogleApiClient.ConnectionCallbacks,
 
     @Override
     public void onLocationChanged(Location location) {
-        LocationServices.FusedLocationApi.removeLocationUpdates(mApiClient, this);
-        if (mClientListener != null) {
-            mClientListener.onLocationChanged(location);
-            mClientListener = null;
+        if (mApiClient.isConnected()) {
+            LocationServices.FusedLocationApi.removeLocationUpdates(mApiClient, this);
+            if (mClientListener != null) {
+                mClientListener.onLocationChanged(location);
+                mClientListener = null;
+            }
         }
     }
 

@@ -97,7 +97,7 @@ public class Settings extends PreferenceActivity {
 
         private Preference mRegardlessOfUserInputPref;
         private Preference mRestrictToSSIDPref;
-        private Preference mHardcodeLocationPref;
+        private Preference mHomeLocationPref;
         private Preference mAutoTillTimePref;
         private Preference mMaxAutoBrightnessPref;
 
@@ -135,7 +135,7 @@ public class Settings extends PreferenceActivity {
 
             mRegardlessOfUserInputPref = findPreference(getString(R.string.setting_light_auto_even_user_interacts_key));
             mRestrictToSSIDPref = findPreference(getString(R.string.setting_light_auto_lock_to_network_key));
-            mHardcodeLocationPref = findPreference(getString(R.string.setting_light_location_hardcode_location_key));
+            mHomeLocationPref = findPreference(getString(R.string.setting_light_location_home_location_key));
             mAutoTillTimePref = findPreference(getString(R.string.settings_light_auto_night_time_key));
             mMaxAutoBrightnessPref = findPreference(getString(R.string.settings_light_auto_max_automated_brightness_key));
 
@@ -193,7 +193,7 @@ public class Settings extends PreferenceActivity {
             }
 
             mRestrictToSSIDPref.setEnabled(enableLightAutoPrefs);
-            mHardcodeLocationPref.setEnabled(enableLightAutoPrefs);
+            mHomeLocationPref.setEnabled(enableLightAutoPrefs);
             mAutoTillTimePref.setEnabled(enableLightAutoPrefs);
             mMaxAutoBrightnessPref.setEnabled(enableLightAutoPrefs);
         }

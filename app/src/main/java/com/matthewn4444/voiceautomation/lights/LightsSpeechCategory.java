@@ -26,6 +26,8 @@ public class LightsSpeechCategory extends SpeechCategory {
     public interface ILightController {
         public interface OnConnectionChangedListener {
             public void onConnectionChanged(int lightsConnected, boolean justConnected);
+            public void onCommandFinished();
+            public void onError(Exception e);
         }
         public boolean isAvailable();
         public boolean isOn();

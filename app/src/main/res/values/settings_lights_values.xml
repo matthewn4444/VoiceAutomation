@@ -66,11 +66,11 @@
     <string name="settings_light_auto_max_automated_brightness_message">Please set the maximum brightness that the light automation will use.\n</string>
 
     <!-- Light Automation Location Settings -->
-    <string name="setting_light_location_hardcode_location_title">Hardcode Location</string>
-    <string name="setting_light_location_hardcode_location_key">settings.key.light.location.hardcode.location</string>
-    <string name="setting_light_location_hardcode_location_summary">When automating the lights, it needs the location to calculate sunset. You can hardcode the location so the app never asks for location. This makes automation faster without needing to query location if set for one location.</string>
+    <string name="setting_light_location_home_location_title">Set Home Location</string>
+    <string name="setting_light_location_home_location_key">settings.key.light.location.home.location</string>
+    <string name="setting_light_location_home_location_summary">Enabling a home location will allow lights to automatically shut off when leaving the location when wifi disconnects.</string>
 
     <string name="setting_light_location_field_default_summary">0 (Not used)</string>
-    <string name="setting_light_location_latitude_title">Set Latitude</string>
-    <string name="setting_light_location_longitude_title">Set Longitude</string>
+    <string name="setting_light_location_latitude_title">Set Home Latitude</string>
+    <string name="setting_light_location_longitude_title">Set Home Longitude</string>
 </resources>

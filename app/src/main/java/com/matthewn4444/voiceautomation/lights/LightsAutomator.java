@@ -54,6 +54,14 @@ public class LightsAutomator implements LocationListener {
                                 init();
                             }
                         }
+
+                        @Override
+                        public void onCommandFinished() {
+                        }
+
+                        @Override
+                        public void onError(Exception e) {
+                        }
                     });
             mController.connect();
         } else {
@@ -64,19 +72,70 @@ public class LightsAutomator implements LocationListener {
         // Setup location
         mLocationHelper = new LocationHelper(ctx);
         mLocationHelper.queryLocation(this, silent);
+
+        // Record this SSID if connected and not recorded yet
+        if (LazyPref.getString(ctx, R.string.settings_key_last_wifi_ssid) == null) {
+            String ssid = getCurrentSSID(ctx);
+            if (ssid != null) {
+                PreferenceManager.getDefaultSharedPreferences(ctx).edit().putString(
+                        ctx.getString(R.string.settings_key_last_wifi_ssid), ssid);
+            }
+        }
+    }
+
+    protected static void log(Object... txt) {
+        String returnStr = "";
+        int i = 1;
+        int size = txt.length;
+        if (size != 0) {
+            returnStr = txt[0] == null ? "null" : txt[0].toString();
+            for (; i < size; i++) {
+                returnStr += ", "
+                        + (txt[i] == null ? "null" : txt[i].toString());
+            }
+        }
+        Log.i("lunch", returnStr);
     }
 
     @Override
     public void onLocationChanged(Location location) {
         if (location != null) {
             mLocation = location;
+
+            // If the home location is not enabled, we can put the found location there
+            if (!LazyPref.getBool(mCtx, R.string.setting_light_location_home_location_key, false)
+                    && location.getLatitude() != 0 && location.getLongitude() != 0) {
+                PreferenceManager.getDefaultSharedPreferences(mCtx).edit()
+                        .putString(mCtx.getString(R.string.settings_key_home_latitude), Double.toString(location.getLatitude()))
+                        .putString(mCtx.getString(R.string.settings_key_home_longitude), Double.toString(location.getLongitude()))
+                                .apply();
+            }
             init();
         } else {
             Log.v(TAG, mCtx.getString(R.string.location_is_unavailable));
         }
     }
 
-    static public void cancelAutomator(Context ctx) {
+    public static String getCurrentSSID(Context context) {
+        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+        if (wifiInfo != null) {
+            String bssid = wifiInfo.getBSSID();
+            if (bssid == null || bssid.equals("00:00:00:00:00:00")) {
+                return null;
+            }
+            String ssid = wifiInfo.getSSID();
+            if (ssid.charAt(0) != '<') {        // <unknown ssid>, when internet is not connected
+                if (ssid.charAt(0) == '"' && ssid.charAt(ssid.length() - 1) == '"') {
+                    return ssid.substring(1, ssid.length() - 1);
+                }
+                return ssid;
+            }
+        }
+        return null;
+    }
+
+    public static void cancelAutomator(Context ctx) {
         AlarmManager alarmMgr = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
         PendingIntent in = (PendingIntent.getBroadcast(ctx, 0,
                 new Intent(ctx, LightsAutomatorReceiver.class),
@@ -201,13 +260,32 @@ public class LightsAutomator implements LocationListener {
         }
 
         // Try to match current SSID with settings
-        WifiManager wifiManager = (WifiManager) ctx.getSystemService(Context.WIFI_SERVICE);
-        WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-        String ssid = wifiInfo.getSSID();
-        if (ssid.charAt(0) == '<') {        // <unknown ssid>, when internet is not connected
-            return false;
-        }
-        return ssid.substring(1, ssid.length() - 1).equals(savedSSID);
+        String ssid = getCurrentSSID(ctx);
+        return ssid != null && ssid.equals(savedSSID);
+    }
+
+    static boolean isInAutomationStateTurnOffLights(Context ctx) {
+        // To turn off the lights we need to make sure that:
+        // 1. Restrict ssid is on and current ssid is the same
+        // 2. Home location is enabled
+        // 3. Must be disconnecting wifi, handled by receiver
+        // 4. Long and lat home location must not be 0
+        log(LazyPref.getBool(ctx, R.string.setting_light_auto_lock_to_network_key)
+                , LazyPref.getBool(ctx, R.string.setting_light_location_home_location_key)
+                , LazyPref.getString(ctx, R.string.settings_key_last_wifi_ssid)
+                , LazyPref.getString(ctx, R.string.setting_light_auto_enter_ssid_key)
+                , LazyPref.getString(ctx, R.string.settings_key_last_wifi_ssid)
+                 , LazyPref.getString(ctx, R.string.setting_light_auto_enter_ssid_key)
+                , LazyPref.getString(ctx, R.string.settings_key_home_latitude) != null
+                , LazyPref.getString(ctx, R.string.settings_key_home_longitude) != null);
+
+        String lastSSID = LazyPref.getString(ctx, R.string.settings_key_last_wifi_ssid);
+        String autoSSID = LazyPref.getString(ctx, R.string.setting_light_auto_enter_ssid_key);
+        return LazyPref.getBool(ctx, R.string.setting_light_auto_lock_to_network_key)
+            && LazyPref.getBool(ctx, R.string.setting_light_location_home_location_key)
+            && lastSSID != null && autoSSID != null && autoSSID.equals(lastSSID)
+            && LazyPref.getString(ctx, R.string.settings_key_home_latitude) != null
+            && LazyPref.getString(ctx, R.string.settings_key_home_longitude) != null;
     }
 
     public void reschedule() {

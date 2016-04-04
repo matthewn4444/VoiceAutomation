@@ -4,12 +4,13 @@
     <string name="settings_value_suffix_percentage">%</string>
 
     <!-- Settings and Keys -->
-    <string name="settings_key_cached_latitude">settings.key.cached.latitude</string>
-    <string name="settings_key_cached_longitude">settings.key.cached.longitude</string>
+    <string name="settings_key_home_latitude">settings.key.home.latitude</string>
+    <string name="settings_key_home_longitude">settings.key.home.longitude</string>
 
     <string name="settings_key_last_spammed_wifi_time_connection">settings.key.last.spammed.wifi.time.connection</string>
     <string name="settings_key_last_spammed_wifi_time_disconnection">settings.key.last.spammed.wifi.time.disconnection</string>
     <string name="settings_key_last_wifi_time_disconnection">settings.key.last.wifi.time.disconnection</string>
+    <string name="settings_key_last_wifi_ssid">settings.key.last.wifi.ssid</string>
 
     <string name="settings_key_last_light_user_interaction">settings.key.last.light.user.interaction</string>
 

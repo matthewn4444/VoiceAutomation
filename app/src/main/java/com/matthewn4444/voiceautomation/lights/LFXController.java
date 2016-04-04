@@ -83,6 +83,8 @@ public class LFXController implements LightsSpeechCategory.ILightController,
         if (!mRemote.isRunning()) {
             mRemote.start();
             mRemote.listAllLights();
+        } else if (!mIsConnected) {
+            mRemote.listAllLights();
         }
     }
 
@@ -107,6 +109,10 @@ public class LFXController implements LightsSpeechCategory.ILightController,
             mCurrentBrightness = bulbs.get(0).brightness();
         }
 
+        if (mIsConnected && mListener != null) {
+            mListener.onCommandFinished();
+        }
+
         // Check to see if we just connected
         if (!mIsConnected && !bulbs.isEmpty()) {
             mIsConnected = true;
@@ -124,5 +130,8 @@ public class LFXController implements LightsSpeechCategory.ILightController,
     @Override
     public void onLIFXError(LIFXResponseException e) {
         e.printStackTrace();
+        if (mListener != null) {
+            mListener.onError(e);
+        }
     }
 }
