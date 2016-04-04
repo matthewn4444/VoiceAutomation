@@ -295,6 +295,9 @@ public class SpeechController implements RecognitionListener {
     }
 
     private void switchSearch(final String searchName) {
+        if (mRecognizer == null) {
+            return;
+        }
         mRecognizer.stop();
 
         // If we are not spotting, start listening with timeout
