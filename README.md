@@ -26,8 +26,8 @@ Follow here to get your token: [http://api.developer.lifx.com/docs/authenticatio
 You can follow that with the following
 
 * **<zero -> one hundred> percent:** this will change the light percentage (0-100%)
-* ** turn off:** turns off your lights
-* ** turn on:** turns on your lights
+* **turn off:** turns off your lights
+* **turn on:** turns on your lights
 * **dimmer:** dims the lights by a percentage; changable in settings, default is 5%
 * **brighter:** brightens the lights by a percentage; changable in settings, default is 5%
 
@@ -59,4 +59,4 @@ You can follow that with the following
 
 ## Locking Voice Commands
 
-* Use **do not listen** to lock the app to only unlock to **start listening**
+* Use **"do not listen"** to lock the app to only unlock to **"start listening"**
