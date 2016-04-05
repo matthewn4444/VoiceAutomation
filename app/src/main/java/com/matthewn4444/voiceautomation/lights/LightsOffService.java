@@ -17,6 +17,7 @@ import com.google.android.gms.gcm.OneoffTask;
 import com.google.android.gms.gcm.Task;
 import com.google.android.gms.gcm.TaskParams;
 import com.google.android.gms.location.LocationListener;
+import com.matthewn4444.voiceautomation.LazyPref;
 import com.matthewn4444.voiceautomation.LocationHelper;
 import com.matthewn4444.voiceautomation.R;
 
@@ -47,7 +48,7 @@ public class LightsOffService extends GcmTaskService {
      * - must have hardcoded ssid
      * - current location must be far enough from fixed point
      * @param ctx Context
-     * @return
+     * @return GcmNetworkManager success or fail
      */
     static int turnOffLightsIfAllowed(final Context ctx) {
         return turnOffLightsIfAllowed(ctx, 0, false, 0);
@@ -85,7 +86,9 @@ public class LightsOffService extends GcmTaskService {
                                 .remove(ctx.getString(R.string.settings_key_last_wifi_time_disconnection))
                                 .apply();
                     } else {
-                        lights.turnOff();
+                        if (!LazyPref.getBool(ctx, R.string.settings_light_auto_disable_off_leave_key)) {
+                            lights.turnOff();
+                        }
                     }
                 }
 

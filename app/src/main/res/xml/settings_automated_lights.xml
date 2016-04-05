@@ -23,6 +23,11 @@
             android:summary="@string/settings_light_auto_disable_wifi_summary"/>
 
         <CheckBoxPreference
+            android:title="@string/settings_light_auto_disable_off_leave_title"
+            android:key="@string/settings_light_auto_disable_off_leave_key"
+            android:summary="@string/settings_light_auto_disable_off_leave_summary"/>
+
+        <CheckBoxPreference
             android:title="@string/settings_light_auto_disable_startup_title"
             android:key="@string/settings_light_auto_disable_startup_key"
             android:summary="@string/settings_light_auto_disable_startup_summary"

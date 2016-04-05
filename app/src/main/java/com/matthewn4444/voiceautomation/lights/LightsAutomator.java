@@ -83,20 +83,6 @@ public class LightsAutomator implements LocationListener {
         }
     }
 
-    protected static void log(Object... txt) {
-        String returnStr = "";
-        int i = 1;
-        int size = txt.length;
-        if (size != 0) {
-            returnStr = txt[0] == null ? "null" : txt[0].toString();
-            for (; i < size; i++) {
-                returnStr += ", "
-                        + (txt[i] == null ? "null" : txt[i].toString());
-            }
-        }
-        Log.i("lunch", returnStr);
-    }
-
     @Override
     public void onLocationChanged(Location location) {
         if (location != null) {
@@ -270,18 +256,10 @@ public class LightsAutomator implements LocationListener {
         // 2. Home location is enabled
         // 3. Must be disconnecting wifi, handled by receiver
         // 4. Long and lat home location must not be 0
-        log(LazyPref.getBool(ctx, R.string.setting_light_auto_lock_to_network_key)
-                , LazyPref.getBool(ctx, R.string.setting_light_location_home_location_key)
-                , LazyPref.getString(ctx, R.string.settings_key_last_wifi_ssid)
-                , LazyPref.getString(ctx, R.string.setting_light_auto_enter_ssid_key)
-                , LazyPref.getString(ctx, R.string.settings_key_last_wifi_ssid)
-                 , LazyPref.getString(ctx, R.string.setting_light_auto_enter_ssid_key)
-                , LazyPref.getString(ctx, R.string.settings_key_home_latitude) != null
-                , LazyPref.getString(ctx, R.string.settings_key_home_longitude) != null);
-
         String lastSSID = LazyPref.getString(ctx, R.string.settings_key_last_wifi_ssid);
         String autoSSID = LazyPref.getString(ctx, R.string.setting_light_auto_enter_ssid_key);
-        return LazyPref.getBool(ctx, R.string.setting_light_auto_lock_to_network_key)
+        return !LazyPref.getBool(ctx, R.string.settings_light_auto_disable_off_leave_key)
+            && LazyPref.getBool(ctx, R.string.setting_light_auto_lock_to_network_key)
             && LazyPref.getBool(ctx, R.string.setting_light_location_home_location_key)
             && lastSSID != null && autoSSID != null && autoSSID.equals(lastSSID)
             && LazyPref.getString(ctx, R.string.settings_key_home_latitude) != null

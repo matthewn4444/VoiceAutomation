@@ -26,6 +26,10 @@
     <string name="settings_light_auto_disable_wifi_key">settings.key.light.auto.disable.wifi</string>
     <string name="settings_light_auto_disable_wifi_summary">Do not automate lights when wifi connects after being disconnected for a period of time. Lights normally adjust brightness to the time of day.</string>
 
+    <string name="settings_light_auto_disable_off_leave_title">Disable Lights Off When Leaving</string>
+    <string name="settings_light_auto_disable_off_leave_key">settings.key.light.auto.off.leave</string>
+    <string name="settings_light_auto_disable_off_leave_summary">Do not automate lights to turn off when you leave the location where your lights are.</string>
+
     <string name="settings_light_auto_disable_startup_title">Disable Automation On Startup</string>
     <string name="settings_light_auto_disable_startup_key">settings.key.light.auto.disable.startup</string>
     <string name="settings_light_auto_disable_startup_summary">Do not automate lights when app starts. Lights normally adjust brightness to the time of day.</string>
