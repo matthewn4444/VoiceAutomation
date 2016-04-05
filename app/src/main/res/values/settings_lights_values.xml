@@ -13,6 +13,10 @@
     <string name="settings_general_light_enable_lights_key">settings.key.general.light.enable.lights</string>
     <string name="settings_general_light_activation_command_key">settings.key.general.light.activation.command</string>
 
+    <string name="settings_general_light_lifx_remote_token_title">LIFX Api Remote Token</string>
+    <string name="settings_general_light_lifx_remote_token_key">settings.key.general.light.lifx.remote.token</string>
+    <string name="settings_general_light_lifx_remote_token_default_summary">Remote Token is not specified</string>
+
     <string name="settings_general_light_dim_brighten_step_title">Dim/Brighten Step (%)</string>
     <string name="settings_general_light_dim_brighten_step_key">settings.key.general.light.dim.brighten.step</string>
     <string name="settings_general_light_dim_brighten_step_summary">When using the voice commands "Brighter" and "Dimmer", this will increase/decrease the light percentage by the inputted amount.</string>

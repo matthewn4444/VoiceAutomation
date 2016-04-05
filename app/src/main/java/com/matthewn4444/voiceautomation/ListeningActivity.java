@@ -41,6 +41,7 @@ public class ListeningActivity extends AppCompatActivity implements
     // Track settings so we know what changed
     private boolean mEnableLights;
     private int mSettingsLastSunsetSteps;
+    private String mLifxRemoteToken;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +52,8 @@ public class ListeningActivity extends AppCompatActivity implements
         findViewById(SettingsButtonId).setOnClickListener(this);
         mPresenter = new UIPresenter(this, mCategories);
         checkForPermissions();
+
+        mLifxRemoteToken = LazyPref.getString(this, R.string.settings_general_light_lifx_remote_token_key);
     }
 
     @Override
@@ -128,9 +131,10 @@ public class ListeningActivity extends AppCompatActivity implements
             }
 
             // Check if user has enabled/disabled lights
+            String newToken = LazyPref.getString(this, R.string.settings_general_light_lifx_remote_token_key);
             boolean newEnableLights = LightsSpeechCategory.areLightsEnabled(this);
-            if (newEnableLights != mEnableLights) {
-                if (newEnableLights) {
+            if (newEnableLights != mEnableLights || (newToken != null && !newToken.equals(mLifxRemoteToken))) {
+                if (newEnableLights && newToken != null) {      // Temp till local is hacked
                     // Just enabled the lights
                     mLightAutomator = new LightsAutomator(this);
 

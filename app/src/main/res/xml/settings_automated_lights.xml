@@ -15,6 +15,13 @@
             android:defaultValue="@integer/settings_default_dim_brighten_step"
             app:min="2"
             app:max="10"/>
+
+        <com.matthewn4444.voiceautomation.settings.preferences.SummaryEditTextPreference
+            android:title="@string/settings_general_light_lifx_remote_token_title"
+            android:key="@string/settings_general_light_lifx_remote_token_key"
+            android:dependency="@string/setting_light_auto_lock_to_network_key"
+            app:emptyText="@string/settings_general_light_lifx_remote_token_default_summary"/>
+
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/settings_light_auto_cate_scenarios_title">
         <CheckBoxPreference

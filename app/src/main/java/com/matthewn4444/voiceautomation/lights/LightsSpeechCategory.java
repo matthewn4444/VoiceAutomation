@@ -52,7 +52,8 @@ public class LightsSpeechCategory extends SpeechCategory {
     }
 
     public static boolean areLightsEnabled(Context ctx) {
-        return LazyPref.getBool(ctx, R.string.settings_general_light_enable_lights_key, true);
+        return LazyPref.getBool(ctx, R.string.settings_general_light_enable_lights_key, true)
+                && LazyPref.getString(ctx, R.string.settings_general_light_lifx_remote_token_key) != null;
     }
 
     public int getBrightness() {

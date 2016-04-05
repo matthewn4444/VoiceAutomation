@@ -5,6 +5,7 @@
     <string name="prompt_ask_turn_on_location">In order to use light automation, we need to enable location get information about the sunset time, would you like to go and enable location?</string>
     <string name="location_is_unavailable">Location is unavailable, therefore your lights will not be automatically turned on.</string>
     <string name="permissions_requested">We need these permissions to use this app. Please allow it.</string>
+    <string name="lifx_api_remote_token_invalid">Your lifx api remote token is invalid.</string>
 
     <!-- Speech input prompt messages -->
     <string name="prompt_setup">Preparing&#8230;</string>

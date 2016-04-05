@@ -7,12 +7,16 @@ import android.content.Intent;
 import android.location.Location;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.Handler;
+import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.util.Pair;
+import android.widget.Toast;
 
 import com.google.android.gms.location.LocationListener;
 import com.luckycatlabs.sunrisesunset.SunriseSunsetCalculator;
+import com.matthewn4444.lifx.remote.LIFXResponseException;
 import com.matthewn4444.voiceautomation.LazyPref;
 import com.matthewn4444.voiceautomation.LocationHelper;
 import com.matthewn4444.voiceautomation.R;
@@ -61,6 +65,14 @@ public class LightsAutomator implements LocationListener {
 
                         @Override
                         public void onError(Exception e) {
+                            if (e instanceof LIFXResponseException && ((LIFXResponseException) e).getErrorResponseCode() == 401) {
+                                new Handler(Looper.getMainLooper()).post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(mCtx, R.string.lifx_api_remote_token_invalid, Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                            }
                         }
                     });
             mController.connect();

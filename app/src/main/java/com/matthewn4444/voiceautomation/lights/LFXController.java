@@ -8,6 +8,7 @@ import com.matthewn4444.lifx.remote.LIFXRemote;
 import com.matthewn4444.lifx.remote.LIFXRemoteResponse;
 import com.matthewn4444.lifx.remote.LIFXResponseException;
 import com.matthewn4444.lifx.remote.LIFXState;
+import com.matthewn4444.voiceautomation.LazyPref;
 import com.matthewn4444.voiceautomation.R;
 
 import java.util.List;
@@ -24,7 +25,8 @@ public class LFXController implements LightsSpeechCategory.ILightController,
     private boolean mCurrentlyOn;
 
     public LFXController(Context ctx) {
-        mRemote = new LIFXRemote(ctx.getString(R.string.lifx_token_key));
+        String token = LazyPref.getString(ctx, R.string.settings_general_light_lifx_remote_token_key);
+        mRemote = new LIFXRemote(token);
         mRemote.setListener(this);
         mIsConnected = false;
 
