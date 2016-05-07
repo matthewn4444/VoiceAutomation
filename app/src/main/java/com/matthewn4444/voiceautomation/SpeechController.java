@@ -51,7 +51,7 @@ public class SpeechController implements RecognitionListener {
     private File mCommandFile;
     private boolean mIsReady;
     private boolean mIsLocked;
-    private boolean mPaused;
+    private boolean mAppScreenIsOff;
     private String LOCK_PHRASE;
     private String LOCK_PHRASE1;
     private String LOCK_PHRASE2;
@@ -151,6 +151,13 @@ public class SpeechController implements RecognitionListener {
         String text = hypothesis.getHypstr().trim();
         Log.v(TAG, "Partial result: " + text);
 
+        // When app is paused, only allow quick commands to be said
+        if (mAppScreenIsOff) {
+            checkQuickCommand(text);
+            endSpeech();
+            return;
+        }
+
         SpeechCategory cate = mCategories.get(text);
         if (cate != null) {
             if (cate.isAvailable()) {
@@ -213,28 +220,15 @@ public class SpeechController implements RecognitionListener {
                     }
                 }
                 mLastPartialResult = text;
-            } else if (!LazyPref.getBool(mCtx, R.string.settings_speech_disable_quick_commands_key)) {
-                // Check quick commands for each category
-                boolean isSimilarToLastTime = mLastQuickCommand != null && text.startsWith(mLastQuickCommand);
-                long now = System.currentTimeMillis();
-                if (!isSimilarToLastTime || (now - mLastQuickCommandTime > 3000)) {
-                    mLastQuickCommandTime = now;
-                    mLastQuickCommand = text;
-                    for (String command: mCategories.keySet()) {
-                        SpeechCategory category = mCategories.get(command);
-                        if (category.onQuickCommand(text)) {
-                            endSpeech();
-                            return;
-                        }
-                    }
-                }
+            } else {
+                checkQuickCommand(text);
             }
         }
     }
 
     @Override
     public void onResult(Hypothesis hypothesis) {
-        if (!mIsLocked && !mPaused) {
+        if (!mIsLocked && !mAppScreenIsOff) {
             if (hypothesis != null) {
                 String text = hypothesis.getHypstr();
                 if (!text.equals(UNLOCK_PHRASE)) {
@@ -243,6 +237,25 @@ public class SpeechController implements RecognitionListener {
                 mCurrentCategory = null;
             } else {
                 speechFinishedWithResult(null);
+            }
+        }
+    }
+
+    private void checkQuickCommand(String text) {
+        if (!LazyPref.getBool(mCtx, R.string.settings_speech_disable_quick_commands_key)) {
+            // Check quick commands for each category
+            boolean isSimilarToLastTime = mLastQuickCommand != null && text.startsWith(mLastQuickCommand);
+            long now = System.currentTimeMillis();
+            if (!isSimilarToLastTime || (now - mLastQuickCommandTime > 3000)) {
+                mLastQuickCommandTime = now;
+                mLastQuickCommand = text;
+                for (String command: mCategories.keySet()) {
+                    SpeechCategory category = mCategories.get(command);
+                    if (category.onQuickCommand(text)) {
+                        endSpeech();
+                        return;
+                    }
+                }
             }
         }
     }
@@ -343,12 +356,16 @@ public class SpeechController implements RecognitionListener {
         }
     }
 
-    public void pause() {
-        mPaused = true;
+    public void pause(boolean continueListen) {
+        mAppScreenIsOff = true;
         Log.v(TAG, "Pause speech recognition");
-        endSpeech();
-        if (mRecognizer != null) {
-            mRecognizer.stop();
+        if (continueListen) {
+            endSpeech();
+        } else {
+            endTimeout();
+            if (mRecognizer != null) {
+                mRecognizer.stop();
+            }
         }
         if (mSoundPool != null) {
             mSoundPool.release();
@@ -357,7 +374,7 @@ public class SpeechController implements RecognitionListener {
     }
 
     public void resume() {
-        mPaused = false;
+        mAppScreenIsOff = false;
         if (mIsReady) {
             Log.v(TAG, "Resume speech recognition");
             if (mIsLocked) {

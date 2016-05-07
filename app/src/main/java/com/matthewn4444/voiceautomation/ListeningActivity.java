@@ -59,7 +59,7 @@ public class ListeningActivity extends AppCompatActivity implements
     @Override
     protected void onPause() {
         if (mController != null) {
-            mController.pause();
+            mController.pause(true);
         }
         if (mLightAutomator != null) {
             mLightAutomator.onPause();
