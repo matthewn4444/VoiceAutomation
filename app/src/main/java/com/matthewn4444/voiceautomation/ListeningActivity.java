@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -86,6 +87,17 @@ public class ListeningActivity extends AppCompatActivity implements
     @Override
     protected void onResume() {
         super.onResume();
+
+        // Add immersive mode
+        int uiOptions = getWindow().getDecorView().getSystemUiVisibility();
+        if (Build.VERSION.SDK_INT >= 14) {
+            uiOptions ^= View.SYSTEM_UI_FLAG_HIDE_NAVIGATION;
+        }
+        if (Build.VERSION.SDK_INT >= 19) {
+            uiOptions ^= View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
+        }
+        getWindow().getDecorView().setSystemUiVisibility(uiOptions);
+
         if (mLightAutomator != null) {
             mLightAutomator.onResume();
         }
