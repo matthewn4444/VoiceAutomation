@@ -3,6 +3,7 @@ package com.matthewn4444.voiceautomation;
 import android.animation.ArgbEvaluator;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.view.View;
 import android.view.ViewGroup;
@@ -60,6 +61,8 @@ public abstract class CategoryPresenter {
     public void onShowPresenter(ViewGroup parent, SpeechCategory category) {}
 
     public void onHidePresenter(SpeechCategory category) {}
+
+    public void onConfigurationChanged(Configuration newConfig, SharedMainUI ui) {}
 
     public void onUpdatePresenter(ViewGroup parent, SpeechCategory category) {
         parent.setBackgroundColor(mMainBackgoundColor);

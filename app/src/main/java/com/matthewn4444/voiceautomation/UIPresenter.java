@@ -3,6 +3,7 @@ package com.matthewn4444.voiceautomation;
 import android.Manifest;
 import android.app.Activity;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.support.v4.content.ContextCompat;
 import android.view.View;
@@ -211,6 +212,13 @@ public class UIPresenter implements SpeechController.SpeechListener, SpeechCateg
 
         mPriorityCategory = null;
         updatePriority();
+    }
+
+    public void onConfigurationChanged(Configuration newConfig) {
+        if (mPriorityCategory != null) {
+            mPriorityCategory.getPresenter().onConfigurationChanged(newConfig, mSharedUI);
+        }
+
     }
 
     public void immediatelyHideCategory() {

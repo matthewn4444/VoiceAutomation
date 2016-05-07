@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -54,6 +55,14 @@ public class ListeningActivity extends AppCompatActivity implements
         checkForPermissions();
 
         mLifxRemoteToken = LazyPref.getString(this, R.string.settings_general_light_lifx_remote_token_key);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        if (mPresenter != null) {
+            mPresenter.onConfigurationChanged(newConfig);
+        }
     }
 
     @Override

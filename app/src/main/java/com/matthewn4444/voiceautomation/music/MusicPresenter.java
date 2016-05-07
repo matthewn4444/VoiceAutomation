@@ -4,6 +4,7 @@ import android.animation.ArgbEvaluator;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -34,8 +35,6 @@ import java.util.UUID;
 public class MusicPresenter extends CategoryPresenter {
     private static final int DELAY_ANIMATION_STEP = 150;
 
-    private final int mScreenWidth;
-    private final int mScreenHeight;
     private final RenderScript mRS;
     private final float mDefaultDarkenOpacity;
 
@@ -48,6 +47,7 @@ public class MusicPresenter extends CategoryPresenter {
     private UUID mSongId;
     private boolean mLastSettingsToBlur;
     private float mLastSettingsDarkenOpacity;
+    private Bitmap mCurrentBitmap;
 
     private Animation mSlideInAnimation1;
     private Animation mSlideInAnimation2;
@@ -62,10 +62,6 @@ public class MusicPresenter extends CategoryPresenter {
     public MusicPresenter(Context context) {
         super(context.getResources().getColor(R.color.music_main_background), Color.WHITE);
         mRS = RenderScript.create(context);
-
-        DisplayMetrics metrics = context.getApplicationContext().getResources().getDisplayMetrics();
-        mScreenWidth = metrics.widthPixels;
-        mScreenHeight = metrics.heightPixels;
 
         mDefaultDarkenOpacity = Float.parseFloat(context.getString(R.string.settings_default_album_art_darken_opacity));
         mLastSettingsToBlur = shouldBlur(context);
@@ -139,6 +135,15 @@ public class MusicPresenter extends CategoryPresenter {
         updateState(category);
     }
 
+    @Override
+    public void onConfigurationChanged(Configuration newConfig, SharedMainUI ui) {
+        if (mCurrentBitmap != null) {
+            boolean shouldBlur = shouldBlur(ui.getContext());
+            mBlurredDrawable = setBackgroundImage(mBackgroundView, mCurrentBitmap, shouldBlur);
+            mBackgroundDrawable = setBackgroundImage(ui.getBackgroundView(), mCurrentBitmap, false);
+        }
+    }
+
     public void updateState(SpeechCategory category) {
         MusicSpeechCategory cate = (MusicSpeechCategory) category;
         boolean shuffleOn = cate.isShuffleOn();
@@ -162,6 +167,7 @@ public class MusicPresenter extends CategoryPresenter {
     }
 
     public void updateMainUI(SharedMainUI ui, Song song, Bitmap bitmap) {
+        mCurrentBitmap = bitmap;
         if (bitmap != null) {
             UUID id = song.getId();
             boolean shouldBlur = shouldBlur(ui.getContext());
@@ -186,7 +192,10 @@ public class MusicPresenter extends CategoryPresenter {
 
     // Crops image to screen and then blurs if requested
     private BitmapDrawable setBackgroundImage(View backgroundView, Bitmap bitmap, boolean blur) {
-        float screenRatio = mScreenWidth * 1.0f / mScreenHeight;
+        DisplayMetrics metrics = backgroundView.getContext().getApplicationContext().getResources().getDisplayMetrics();
+        int screenWidth = metrics.widthPixels;
+        int screenHeight = metrics.heightPixels;
+        float screenRatio = screenWidth * 1.0f / screenHeight;
         float imageRatio = bitmap.getWidth() * 1.0f / bitmap.getHeight();
         int w, h;
         Bitmap croppedImage;
@@ -196,12 +205,12 @@ public class MusicPresenter extends CategoryPresenter {
             croppedImage = Bitmap.createBitmap(bitmap, Math.abs(bitmap.getWidth() - w) / 2, 0, w, h);
         } else {
             w = bitmap.getWidth();
-            h = Math.round(bitmap.getHeight() * screenRatio);
+            h = Math.round(bitmap.getHeight() / screenRatio);
             croppedImage = Bitmap.createBitmap(bitmap, 0, Math.abs(bitmap.getHeight() - h) / 2, w, h);
         }
 
         if (blur) {
-            croppedImage = Bitmap.createScaledBitmap(croppedImage, mScreenWidth / 4, mScreenHeight / 4, true);
+            croppedImage = Bitmap.createScaledBitmap(croppedImage, screenWidth / 4, screenHeight / 4, true);
             final Allocation input = Allocation.createFromBitmap(mRS, croppedImage);
             final Allocation output = Allocation.createTyped(mRS, input.getType());
             final ScriptIntrinsicBlur script = ScriptIntrinsicBlur.create(mRS, Element.U8_4(mRS));
