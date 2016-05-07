@@ -19,7 +19,6 @@
         <com.matthewn4444.voiceautomation.settings.preferences.SummaryEditTextPreference
             android:title="@string/settings_general_light_lifx_remote_token_title"
             android:key="@string/settings_general_light_lifx_remote_token_key"
-            android:dependency="@string/setting_light_auto_lock_to_network_key"
             app:emptyText="@string/settings_general_light_lifx_remote_token_default_summary"/>
 
     </PreferenceCategory>
